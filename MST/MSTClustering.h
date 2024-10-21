@@ -26,10 +26,10 @@ public:
     }
 
 protected:
-    using iPair = std::pair<uint, uint>;
-    using edge = std::pair<double, iPair>;
+    using iPair = std::pair<uint, uint>;        // vertices pair
+    using edge = std::pair<double, iPair>;      // edge
 
-private:
+    // a single Node with children.
     class Node {
     public:
         explicit Node(uint vertice) : height(0.), vertices(1, vertice), children() {}
@@ -46,6 +46,7 @@ private:
 
     };
 
+private:
     std::vector<std::shared_ptr<Node>> tree;
 
     void construct_tree(std::vector<edge>&& verticeData, size_t size) {
@@ -63,7 +64,9 @@ private:
         }
     }
 
+    // get full graph data from EventData
     virtual std::vector<edge> get_vertices(const cola::EventData&) = 0;
+    // construct clusters (Node is MST root)
     virtual std::unique_ptr<cola::EventData> get_clusters(std::unique_ptr<cola::EventData>&&, const Node&) = 0;
 };
 
