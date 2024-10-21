@@ -39,6 +39,8 @@ protected:
             vertices.insert(vertices.end(), second->vertices.begin(), second->vertices.end()); // append second vector
         }
 
+        std::vector<uint> get_vertices() { return vertices;}
+
     private:
         double height;
         std::vector<uint> vertices;
@@ -58,8 +60,9 @@ private:
             uint v1 = it.second.first;
             uint v2 = it.second.second;
             if (tree[v1].get() != tree[v2].get()) {
-                tree[v1] = std::make_shared<Node>(std::move(tree[v1]), std::move(tree[v2]), it.first);
-                tree[v2] = tree[v1];
+                auto newNode = std::make_shared<Node>(std::move(tree[v1]), std::move(tree[v2]), it.first);
+                for (const auto vertice: newNode->get_vertices())
+                    tree[vertice] = newNode;
             }
         }
     }
