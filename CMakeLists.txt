@@ -11,10 +11,8 @@ set(CMAKE_INSTALL_PREFIX ${COLA_DIR})
 set(COLA_MODULE_NAME CClustering)
 
 # Add library target
-set(srcs MST/MSTClustering.h)
+set(srcs MST/MSTClustering.h MST/MSTClustering.cpp)
 add_library(CClustering SHARED ${srcs})
-
-set_target_properties(CClustering PROPERTIES LINKER_LANGUAGE CXX)
 
 target_include_directories(CClustering PUBLIC
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/MST>"
