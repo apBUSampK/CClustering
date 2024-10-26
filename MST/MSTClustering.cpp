@@ -98,7 +98,6 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
 EventParticles GMSTClustering::calculate_momentum(std::vector<G4FragmentVector> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, std::vector<std::vector<CLHEP::Hep3Vector>> positions) {
   cola::EventParticles particles;
 
-  std::vector<G4FragmentVector> momClusters = noMomClusters;
   std::vector<double> MstMassVector_A;
   MstMassVector_A.reserve(noMomClusters.at(0).size());
 
@@ -136,8 +135,8 @@ EventParticles GMSTClustering::calculate_momentum(std::vector<G4FragmentVector> 
     }
     momentumVectorA = phaseSpaceDecay.Decay(PrefragmentMass_A, MstMassVector_A);
 
-    for (int I = 0; I < momClusters.at(0).size(); ++I) {
-      auto fragment = momClusters.at(0).at(I);
+    for (int I = 0; I < noMomClusters.at(0).size(); ++I) {
+      auto fragment = noMomClusters.at(0).at(I);
       fragment->SetMomentum((*momentumVectorA->at(I)).boost(boostA));
 
       cola::Particle particle;
@@ -181,8 +180,8 @@ EventParticles GMSTClustering::calculate_momentum(std::vector<G4FragmentVector> 
     }
     momentumVectorB = phaseSpaceDecay.Decay(PrefragmentMass_B, MstMassVector_B);
 
-    for (int I = 0; I < momClusters.at(1).size(); ++I) {
-      auto fragment = momClusters.at(1).at(I);
+    for (int I = 0; I < noMomClusters.at(1).size(); ++I) {
+      auto fragment = noMomClusters.at(1).at(I);
       fragment->SetMomentum((*momentumVectorA->at(I)).boost(boostA));
 
       cola::Particle particle;
@@ -200,7 +199,7 @@ EventParticles GMSTClustering::calculate_momentum(std::vector<G4FragmentVector> 
   MstMassVector_B.clear();
   noMomClusters.clear();
 
-  return momClusters;
+  return particles;
 }
 
 // Get Critical Distance for 1 nuclei
@@ -237,7 +236,6 @@ std::pair<G4FragmentVector, std::vector<std::vector<cola::LorentzVector>>> GMSTC
     G4Fragment* frag = new G4Fragment();
     frag->SetA(A_clust);
     frag->SetZ(Z_clust);
-    frag->SetMomentum({0, 0, 0, 0});
     fragments.push_back(frag);
     positions.push_back(position);
   }
@@ -250,7 +248,7 @@ std::pair<CLHEP::Hep3Vector, CLHEP::Hep3Vector> GMSTClustering::get_boosts() {
   std::string model_type = "G";
   if (histoManager.GetReaderID()) model_type = "VAL";
   FermiMomentum FermiMom(ain, model_type);
-  
+
   FermiMom.SetPzPerNucleon(histoManager.GetInitialContidions().GetPzA() / sourceA, histoManager.GetInitialContidions().GetPzB() / sourceAb);
 
   CLHEP::HepLorentzVector Fermi4MomA = FermiMom.GetLorentzVector("A");
