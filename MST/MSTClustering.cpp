@@ -66,18 +66,18 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
     }
   }
 
-  auto ExEns = get_exens(4);  // Setting default stat type 4
+  auto ExEns = this->get_exens(4);  // Setting default stat type 4
   double ExA = ExEns.first;
   double ExB = ExEns.second;
 
   std::vector<G4FragmentVector> outClusters;
   std::vector<std::vector<LorentzVector>> positions;
 
-      std::vector<std::vector<uint>> clusters = this->get_connected_components(this->get_cd(ExA, A));
+  std::vector<std::vector<uint>> clusters = this->get_connected_components(this->get_cd(ExA, A));
   std::vector<std::vector<uint>> clusters_B = this->get_connected_components(this->get_cd(ExB, Ab));
 
-  auto [output_vector_A, positionsA] = fragments_from_clusters(clusters, nucleons);
-  auto [output_vector_B, positionsB] = fragments_from_clusters(clusters_B, nucleons_B);
+  auto [output_vector_A, positionsA] = this->fragments_from_clusters(clusters, nucleons);
+  auto [output_vector_B, positionsB] = this->fragments_from_clusters(clusters_B, nucleons_B);
 
   outClusters.push_back(output_vector_A);
   outClusters.push_back(output_vector_B);
@@ -87,7 +87,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
 
   auto [boostA, boostB] = this->get_boosts();
 
-  EventParticles cFragments = calculate_momentum(outClusters, ExA, ExB, boostA, boostB, positions);
+  cola::EventParticles cFragments = this->calculate_momentum(outClusters, ExA, ExB, boostA, boostB, positions);
 
   delete nucleons;
   delete nucleons_B;
@@ -137,20 +137,15 @@ EventParticles GMSTClustering::calculate_momentum(std::vector<G4FragmentVector> 
 
     for (int I = 0; I < noMomClusters.at(0).size(); ++I) {
       auto fragment = noMomClusters.at(0).at(I);
-      fragment->SetMomentum((*momentumVectorA->at(I)).boost(boostA));
+      fragment->SetMomentum((*momentumVectorA->at(I)).boost(boostA.x(), boostA.y(), boostA.z()));
 
-      cola::Particle particle;
-      particle.position = *(positions.at(0).at(I));
-      particle.momentum = fragment->GetMomentum();
-      particle.pdgCode = AZToPdg(std::make_pair(fragment->GetA_asInt(), fragment->GetZ_asInt()));
-      particle.pClass = cola::ParticleClass::produced;
-      particles.push_back(particle);
+      cola::Particle particle = this->fragment_to_particle(fragment);
+      particle.push_back(particle);
     }
-
     momentumVectorA->clear();
   }
 
-  ///////////////////////////
+  // side B
 
   SumMassMst = 0;
   SumMassMstEx = 0;
@@ -182,14 +177,10 @@ EventParticles GMSTClustering::calculate_momentum(std::vector<G4FragmentVector> 
 
     for (int I = 0; I < noMomClusters.at(1).size(); ++I) {
       auto fragment = noMomClusters.at(1).at(I);
-      fragment->SetMomentum((*momentumVectorA->at(I)).boost(boostA));
-
-      cola::Particle particle;
-      particle.position = *(positions.at(1).at(I));
-      particle.momentum = fragment->GetMomentum();
-      particle.pdgCode = AZToPdg(std::make_pair(fragment->GetA_asInt(), fragment->GetZ_asInt()));
-      particle.pClass = cola::ParticleClass::produced;
-      particles.push_back(particle);
+      fragment->SetMomentum((*momentumVectorA->at(I)).boost(boostB.x(), boostB.y(), boostB.z()));
+      z
+      cola::Particle particle = this->fragment_to_particle(fragment);
+      particle.push_back(particle);
     }
 
     momentumVectorB->clear();
@@ -244,25 +235,25 @@ std::pair<G4FragmentVector, std::vector<std::vector<cola::LorentzVector>>> GMSTC
 
 // Get boost vectors for 1 nuclei
 std::pair<CLHEP::Hep3Vector, CLHEP::Hep3Vector> GMSTClustering::get_boosts() {
+  // Need arguments
+  
+  // std::string model_type = "G";
+  // if (histoManager.GetReaderID()) model_type = "VAL";
+  // FermiMomentum FermiMom(ain, model_type);
 
-  std::string model_type = "G";
-  if (histoManager.GetReaderID()) model_type = "VAL";
-  FermiMomentum FermiMom(ain, model_type);
+  // FermiMom.SetPzPerNucleon(histoManager.GetInitialContidions().GetPzA() / sourceA, histoManager.GetInitialContidions().GetPzB() / sourceAb);
 
-  FermiMom.SetPzPerNucleon(histoManager.GetInitialContidions().GetPzA() / sourceA, histoManager.GetInitialContidions().GetPzB() / sourceAb);
-
-  CLHEP::HepLorentzVector Fermi4MomA = FermiMom.GetLorentzVector("A");
-  CLHEP::Hep3Vector boostA = Fermi4MomA.boostVector();
+  // CLHEP::HepLorentzVector Fermi4MomA = FermiMom.GetLorentzVector("A");
+  // CLHEP::Hep3Vector boostA = Fermi4MomA.boostVector();
   // event.FermiMomA_x = Fermi4MomA.px();
   // event.FermiMomA_y = Fermi4MomA.py();
   // event.FermiMomA_z = Fermi4MomA.pz();
-  CLHEP::HepLorentzVector Fermi4MomB = FermiMom.GetLorentzVector("B");
-  ;
-  CLHEP::Hep3Vector boostB = Fermi4MomB.boostVector();
+  // CLHEP::HepLorentzVector Fermi4MomB = FermiMom.GetLorentzVector("B");
+  // CLHEP::Hep3Vector boostB = Fermi4MomB.boostVector();
   // event.FermiMomB_x = Fermi4MomB.px();
   // event.FermiMomB_y = Fermi4MomB.py();
   // event.FermiMomB_z = Fermi4MomB.pz();
-  return std::make_pair(boostA, boostB);
+  // return std::make_pair(boostA, boostB);
 }
 
 // DFS for Kruskal Algorithm
@@ -325,4 +316,14 @@ std::pair<double, double> GMSTClustering::get_exens(uint statType) {
   delete ExEnB;
 
   return std::make_pair(energy_A, energy_B);
+}
+
+cola::Particle GMSTClustering::fragment_to_particle(G4Fragment fragment) {
+  cola::Particle particle;
+  particle.position = *(positions.at(0).at(I));
+  particle.momentum = fragment->GetMomentum();
+  particle.pdgCode = AZToPdg(std::make_pair(fragment->GetA_asInt(), fragment->GetZ_asInt()));
+  particle.pClass = cola::ParticleClass::produced;
+  particles.push_back(particle);
+  return particle;
 }

@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "COLA.hh"
+
 #include "G4ExcitationHandler.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Fragment.hh"
@@ -84,6 +85,7 @@ class GMSTClustering : public MSTClustering {
     void dfs(std::shared_ptr<Node> node, std::unordered_set<uint>& visited, std::vector<uint>& component);
     std::pair<G4FragmentVector, std::vector<std::vector<cola::LorentzVector>>> fragments_from_clusters(std::vector<std::vector<uint>> clusters, cola::EventParticles nucleons);
     EventParticles calculate_momentum(std::vector<G4FragmentVector> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, std::vector<std::vector<cola::LorentzVector>> positions);
+    cola::Particle fragment_to_particle(G4Fragment fragment);
 
 
 	G4double eps0 = 2.17 * MeV;
