@@ -12,11 +12,10 @@
 
 #include "G4ExcitationHandler.hh"
 #include "G4SystemOfUnits.hh"
-#include "G4Fragment.hh"
 #include "G4FermiPhaseSpaceDecay.hh"
 #include "G4ReactionProductVector.hh"
 #include "G4NucleiProperties.hh"
-#include "FermiMomentum.hh"
+
 
 class MSTClustering : public cola::VConverter {
 public:
@@ -82,15 +81,14 @@ class GMSTClustering : public MSTClustering {
     double get_cd(double Ex, uint A);
     std::pair<double, double> get_exens(uint statType);
     std::vector<std::vector<uint>> get_connected_components();
-    void dfs(std::shared_ptr<Node> node, std::unordered_set<uint>& visited, std::vector<uint>& component);
-    std::pair<G4FragmentVector, std::vector<std::vector<cola::LorentzVector>>> fragments_from_clusters(std::vector<std::vector<uint>> clusters, cola::EventParticles nucleons);
-    EventParticles calculate_momentum(std::vector<G4FragmentVector> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, std::vector<std::vector<cola::LorentzVector>> positions);
-    cola::Particle fragment_to_particle(G4Fragment fragment);
+    void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component);
+    std::vector<cola::Particle*> fragments_from_clusters(const std::vector<std::vector<uint>>&, const cola::EventParticles&);
+    cola::EventParticles calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB);
 
 
 	G4double eps0 = 2.17 * MeV;
 	G4double alphaPow = -1.02;
-	G4double d0 = 2.7 * fm;
+	G4double d0 = 2.7;
 	G4double aColRel = 5.315; //divided by aVol
 	G4double aSurfRel  = 0.017; //divided by aVol
 	G4double aVol     = 0.054;

@@ -4,24 +4,30 @@ project(CClustering VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(COLA REQUIRED)
+find_package(Geant4 REQUIRED)
 
 include(CMakePackageConfigHelpers)
+include(${Geant4_USE_FILE})
 
 set(CMAKE_INSTALL_PREFIX ${COLA_DIR})
 set(COLA_MODULE_NAME CClustering)
 
+# G зависимость
+
 # Add library target
-set(srcs MST/MSTClustering.h MST/MSTClustering.cpp)
+set(srcs MST/MSTClustering.h MST/MSTClustering.cpp RepulsionStage/Repulsion.hh RepulsionStage/Repulsion.cpp)
 add_library(CClustering SHARED ${srcs})
 
 target_include_directories(CClustering PUBLIC
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/MST>"
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/RepulsionStage>"
+        ${Geant4_INCLUDE_DIR}
         $<INSTALL_INTERFACE:include/${COLA_MODULE_NAME}>)
 
-target_link_libraries(CClustering PUBLIC COLA)
+target_link_libraries(CClustering PUBLIC COLA ${Geant4_LIBRARIES})
 
 # Specify public headers for installation
-set(PROJECT_PUBLIC_HEADERS "MST/MSTClustering.h")
+set(PROJECT_PUBLIC_HEADERS "MST/MSTClustering.h" "RepulsionStage/Repulsion.hh")
 
 set_target_properties(CClustering PROPERTIES PUBLIC_HEADER "${PROJECT_PUBLIC_HEADERS}")
 
