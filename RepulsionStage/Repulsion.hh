@@ -9,6 +9,7 @@
 
 #include "COLA.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4ReactionProductVector.hh"
 
 namespace RepulsionStage {
 
@@ -45,7 +46,7 @@ class BHTree {
 
  private:
   std::unique_ptr<BHNode> rootnode_;
-  G4FragmentVector* frags_;
+  std::vector<cola::Particle*>* frags_;
   const std::vector<int>* maps_;
   std::vector<G4ThreeVector> fs_;
 

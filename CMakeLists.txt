@@ -12,22 +12,24 @@ include(${Geant4_USE_FILE})
 set(CMAKE_INSTALL_PREFIX ${COLA_DIR})
 set(COLA_MODULE_NAME CClustering)
 
-# G зависимость
-
 # Add library target
-set(srcs MST/MSTClustering.h MST/MSTClustering.cpp RepulsionStage/Repulsion.hh RepulsionStage/Repulsion.cpp)
+file(GLOB excitation_cc_files "ExcitationEnergy/*.cc")
+file(GLOB excitation_h_files "ExcitationEnergy/*.h")
+
+set(srcs MST/MSTClustering.h MST/MSTClustering.cc RepulsionStage/Repulsion.hh RepulsionStage/Repulsion.cc ${excitation_cc_files})
 add_library(CClustering SHARED ${srcs})
 
 target_include_directories(CClustering PUBLIC
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/MST>"
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/RepulsionStage>"
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/ExcitationEnergy>"
         ${Geant4_INCLUDE_DIR}
         $<INSTALL_INTERFACE:include/${COLA_MODULE_NAME}>)
 
 target_link_libraries(CClustering PUBLIC COLA ${Geant4_LIBRARIES})
 
 # Specify public headers for installation
-set(PROJECT_PUBLIC_HEADERS "MST/MSTClustering.h" "RepulsionStage/Repulsion.hh")
+set(PROJECT_PUBLIC_HEADERS "MST/MSTClustering.h" "RepulsionStage/Repulsion.hh" ${excitation_h_files})
 
 set_target_properties(CClustering PROPERTIES PUBLIC_HEADER "${PROJECT_PUBLIC_HEADERS}")
 

@@ -56,8 +56,9 @@ protected:
 
     };
 
-private:
     std::vector<std::shared_ptr<Node>> tree;
+
+private:
 
     void construct_tree(std::vector<edge>&& verticeData, size_t size);
 
@@ -68,7 +69,11 @@ private:
 };
 
 class GMSTClustering : public MSTClustering {
+  protected:
+    using edge = std::pair<double, std::pair<uint, uint>>;
   private:
+
+    static constexpr double nucleonAverMass = 0.93891875434*CLHEP::GeV;
     uint sourceA;
     uint sourceAb;
     uint A = 0;
@@ -80,17 +85,19 @@ class GMSTClustering : public MSTClustering {
     std::unique_ptr<cola::EventData> get_clusters(std::unique_ptr<cola::EventData>&&, const Node&) final;
     double get_cd(double Ex, uint A);
     std::pair<double, double> get_exens(uint statType);
-    std::vector<std::vector<uint>> get_connected_components();
-    void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component);
+    std::vector<std::vector<uint>> get_connected_components(double);
+    void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd);
     std::vector<cola::Particle*> fragments_from_clusters(const std::vector<std::vector<uint>>&, const cola::EventParticles&);
     cola::EventParticles calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB);
+    CLHEP::Hep3Vector get_boost(uint pZ, uint A);
+    cola::LorentzVector ToColaLorentzVector(G4LorentzVector lv);
 
 
 	G4double eps0 = 2.17 * MeV;
 	G4double alphaPow = -1.02;
 	G4double d0 = 2.7;
-	G4double aColRel = 5.315; //divided by aVol
-	G4double aSurfRel  = 0.017; //divided by aVol
+	G4double aColRel = 5.315;
+	G4double aSurfRel  = 0.017;
 	G4double aVol     = 0.054;
 
     G4FermiPhaseSpaceDecay phaseSpaceDecay;
