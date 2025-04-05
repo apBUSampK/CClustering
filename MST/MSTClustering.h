@@ -69,6 +69,9 @@ private:
 };
 
 class GMSTClustering : public MSTClustering {
+  public:
+    GMSTClustering() = default;
+    GMSTClustering(uint stat_exen_type, uint consider_rep) : stat_exen_type_(stat_exen_type), consider_rep_(static_cast<bool>(consider_rep)) {};
   protected:
     using edge = std::pair<double, std::pair<uint, uint>>;
   private:
@@ -80,11 +83,13 @@ class GMSTClustering : public MSTClustering {
     uint Ab = 0;
     uint Z = 0;
     uint Zb = 0;
+    uint stat_exen_type_ = 4;
+    bool consider_rep_ = true;
 
     std::vector<edge> get_vertices(const cola::EventData&) final;
     std::unique_ptr<cola::EventData> get_clusters(std::unique_ptr<cola::EventData>&&, const Node&) final;
     double get_cd(double Ex, uint A);
-    std::pair<double, double> get_exens(uint statType);
+    std::pair<double, double> get_exens();
     std::vector<std::vector<uint>> get_connected_components(double);
     void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd);
     std::vector<cola::Particle*> fragments_from_clusters(const std::vector<std::vector<uint>>&, const cola::EventParticles&);

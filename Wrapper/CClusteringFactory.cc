@@ -8,10 +8,11 @@
 #include "MSTClustering.h"
 
 cola::VFilter* CClusteringFactory::create(const std::map<std::string, std::string>& paramMap) {
-  // extract neede parameters
-  // if (paramMap.at("clustering_type") == "GMST") {
-  //   return new GMSTClustering(paramMap.at("readerID"));
-  // } else {
-  //   throw std::runtime_error("Clustering type is unrecognized");
-  // }
+  if (paramMap.at("clustering_type") == "GMST") {
+    uint stat_exen_type = std::stoi(paramMap.at("stat_exen_type"));
+    uint consider_rep = std::stoi(paramMap.at("consider_coulomb"));
+    return new GMSTClustering(stat_exen_type, consider_rep);
+  } else {
+    throw std::runtime_error("Clustering type is unrecognized");
+  }
 }

@@ -1,14 +1,11 @@
-#include "ExcitationEnergy.hh"
+#include "ExcitationEnergy.h"
 
-#include "Ericson.hh"
-#include "GaimardSchmidt.hh"
+#include "Ericson.h"
+#include "GaimardSchmidt.h"
 
 ExcitationEnergy::ExcitationEnergy(G4int ExEnLabel_in, G4int initA_in): ExEnLabel(3) {
-ExEnLabel = ExEnLabel_in;
-initA = initA_in;
-
-G4cout<<"Excitation energy will be calculated with the "<<ExEnLabel_in<<" way  \r"<<G4endl;
-
+    ExEnLabel = ExEnLabel_in;
+    initA = initA_in;
     LowExEn = 0*initA;
     UpExEn = 100*initA;
     Ebound = 40;
@@ -16,7 +13,7 @@ G4cout<<"Excitation energy will be calculated with the "<<ExEnLabel_in<<" way  \
     std::string filepath(__FILE__);
     std::string filename(basename(__FILE__));
     filepath.erase(filepath.length() - filename.length(), filename.length());
-   //std::cout<<(filepath)<<(filename)<<std::endl;
+
     filepath += "CorrectedALADINParameters.dat";
     ParamFile.open(filepath.c_str());
 

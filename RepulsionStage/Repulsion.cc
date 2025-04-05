@@ -22,7 +22,9 @@ std::vector<cola::Particle*> CalculateRepulsion(std::vector<cola::Particle*> fra
     auto r_delta = bhtree.Iterate(temp_timedelta);
 
     for (int i = 0; i < nucleons.size(); i++) {
-      nucleons[i].position += r_delta[maps[i]];
+      nucleons[i].position.x += r_delta[maps[i]].x();
+      nucleons[i].position.y += r_delta[maps[i]].y();
+      nucleons[i].position.z += r_delta[maps[i]].z();
     }
     time += temp_timedelta;
   }
@@ -40,17 +42,17 @@ BHTree::BHTree(const cola::EventParticles* nucleons, std::vector<cola::Particle*
 }
 
 std::unique_ptr<BHNode> BHTree::InitializeRoot(const cola::EventParticles* nucleons) {
-  double minX = (*nucleons)[0].position.x(), maxX = minX;
-  double minY = (*nucleons)[0].position.y(), maxY = minY;
-  double minZ = (*nucleons)[0].position.z(), maxZ = minZ;
+  double minX = (*nucleons)[0].position.x, maxX = minX;
+  double minY = (*nucleons)[0].position.y, maxY = minY;
+  double minZ = (*nucleons)[0].position.z, maxZ = minZ;
 
   for (const auto& n : *nucleons) {
-    minX = std::min(minX, n.position.x());
-    maxX = std::max(maxX, n.position.x());
-    minY = std::min(minY, n.position.y());
-    maxY = std::max(maxY, n.position.y());
-    minZ = std::min(minZ, n.position.z());
-    maxZ = std::max(maxZ, n.position.z());
+    minX = std::min(minX, n.position.x);
+    maxX = std::max(maxX, n.position.x);
+    minY = std::min(minY, n.position.y);
+    maxY = std::max(maxY, n.position.y);
+    minZ = std::min(minZ, n.position.z);
+    maxZ = std::max(maxZ, n.position.z);
   }
 
   G4ThreeVector cr = {0.0, 0.0, 0.0};
@@ -60,9 +62,9 @@ std::unique_ptr<BHNode> BHTree::InitializeRoot(const cola::EventParticles* nucle
   double sumZ = 0.0;
 
   for (const auto& nuc : *nucleons) {
-    sumX += nuc.position.x();
-    sumY += nuc.position.y();
-    sumZ += nuc.position.z();
+    sumX += nuc.position.x;
+    sumY += nuc.position.y;
+    sumZ += nuc.position.z;
   }
   cr.setX(sumX / nucleons_sz);
   cr.setY(sumY / nucleons_sz);
@@ -76,7 +78,7 @@ void BHTree::BuildBHTree(const cola::EventParticles* nucleons) {
   rootnode_ = InitializeRoot(nucleons);
 
   for (size_t i = 0; i < nucleons->size(); i++) {
-    G4ThreeVector vec = {(*nucleons)[i].position.x(), (*nucleons)[i].position.y(), (*nucleons)[i].position.z()};
+    G4ThreeVector vec = {(*nucleons)[i].position.x, (*nucleons)[i].position.y, (*nucleons)[i].position.z};
     InsertNucleon(rootnode_, vec, i);
   }
 }
@@ -121,10 +123,12 @@ void BHTree::InsertNucleon(const std::unique_ptr<BHNode>& node, const G4ThreeVec
 double BHTree::GetAdaptiveTimeDelta() const {
   double min_time = max_adaptive_delta;
   for (size_t i = 0; i < frags_->size(); i++) {
-    if (!frags_->at(i)->getAZ().second || !fs_[i].mag() || !frags_->at(i)->momentum.vect().mag()) {
+    auto mnt = frags_->at(i)->momentum;
+    double mval = std::sqrt(mnt.x * mnt.x + mnt.y * mnt.y + mnt.z * mnt.z);
+    if (!frags_->at(i)->getAZ().second || !fs_[i].mag() || !mval) {
       continue;
     }
-    min_time = std::min(min_time, 0.05 * frags_->at(i)->momentum.vect().mag() / fs_[i].mag());
+    min_time = std::min(min_time, 0.05 *  mval / fs_[i].mag());
   }
   return min_time;
 }
@@ -136,13 +140,17 @@ std::vector<G4ThreeVector> BHTree::Iterate(double time_delta) {
     if (frags_->at(i)->getAZ().second == 0) {
       continue;
     }
-    G4LorentzVector p = frags_->at(i)->momentum;
+    cola::LorentzVector p = frags_->at(i)->momentum;
     G4ThreeVector half_dp = fs_[i] * time_delta * 0.5;
 
-    G4ThreeVector mid_v = (p.vect() + half_dp) / std::sqrt((p.vect() + half_dp).mag2() + p.m2());
+    G4ThreeVector mid_v = (G4ThreeVector(p.x, p.y, p.z) + half_dp) / std::sqrt((G4ThreeVector(p.x, p.y, p.z) + half_dp).mag2() + p.mag2());
     r_delta[i] = G4ThreeVector(time_delta * mid_v.x(), time_delta * mid_v.y(), time_delta * mid_v.z());
 
-    p = G4LorentzVector((p.vect() + 2 * half_dp), std::sqrt((p.vect() + 2 * half_dp).mag2() + p.m2()));
+    G4ThreeVector pvec = G4ThreeVector(p.x, p.y, p.z) + 2 * half_dp;
+    p.x = pvec.x();
+    p.y = pvec.y();
+    p.z = pvec.z();
+    p.e = std::sqrt((G4ThreeVector(p.x, p.y, p.z) + 2 * half_dp).mag2() + p.mag2());
 
     frags_->at(i)->momentum = p;
   }

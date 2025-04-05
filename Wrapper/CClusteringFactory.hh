@@ -10,7 +10,6 @@
 class CClusteringFactory final: public cola::VFactory {
 public:
     cola::VFilter* create(const std::map<std::string, std::string>&) final;
-
 };
 
 #endif //CGLAUBER_CCLUSTERINGFACTORY_HH

@@ -75,7 +75,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
     }
   }
 
-  auto ExEns = this->get_exens(4);  // Setting default stat type 4
+  auto ExEns = this->get_exens();
   double ExA = ExEns.first;
   double ExB = ExEns.second;
 
@@ -94,6 +94,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
 
   output_vector_A = this->fragments_from_clusters(clusters, nucleons);
   output_vector_B = this->fragments_from_clusters(clusters_B, nucleons_B);
+  std::cout << "DONE\n";
 
   outClusters.push_back(output_vector_A);
   outClusters.push_back(output_vector_B);
@@ -259,6 +260,7 @@ std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::
     uint A_clust = 0;
     cola::LorentzVector position = {0.0, 0.0, 0.0, 0.0};
     for (uint j = 0; j < clusters[i].size(); ++j) {
+      std::cout << clusters[i][j] << " " << nucleons.size() << "\n";
       auto nucleon = &(nucleons.at(clusters[i][j]));
       position += nucleon->position;
       if (nucleon->getAZ().second == 1) {
@@ -314,11 +316,11 @@ void GMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited,
   }
 }
 
-std::pair<double, double> GMSTClustering::get_exens(uint statType) {
-  auto ExEnA = std::make_unique<ExcitationEnergy>(statType, sourceA);
-  auto ExEnB = std::make_unique<ExcitationEnergy>(statType, sourceAb);
+std::pair<double, double> GMSTClustering::get_exens() {
+  auto ExEnA = std::make_unique<ExcitationEnergy>(stat_exen_type_, sourceA);
+  auto ExEnB = std::make_unique<ExcitationEnergy>(stat_exen_type_, sourceAb);
 
-  if (statType > 2) {
+  if (stat_exen_type_ > 2) {
     double e_0 = 11.5 * MeV;
     double sigma0 = 0.005;
     double b0 = 2;
