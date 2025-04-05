@@ -29,11 +29,13 @@ std::vector<MSTClustering::edge> GMSTClustering::get_vertices(const cola::EventD
   std::vector<edge> edges;
   for (size_t i = 0; i < particles.size(); i++) {
     for (size_t j = i + 1; j < particles.size(); j++) {
-      double temp_dist = 0.0;
-      temp_dist += std::pow(particles[i].position.x - particles[j].position.x, 2);
-      temp_dist += std::pow(particles[i].position.y - particles[j].position.y, 2);
-      temp_dist += std::pow(particles[i].position.z - particles[j].position.z, 2);
-      temp_dist = std::sqrt(temp_dist);
+      double temp_dist = std::numeric_limits<double>::infinity();
+      if (particles[i].pClass == particles[j].pClass) {
+        temp_dist = std::pow(particles[i].position.x - particles[j].position.x, 2);
+        temp_dist += std::pow(particles[i].position.y - particles[j].position.y, 2);
+        temp_dist += std::pow(particles[i].position.z - particles[j].position.z, 2);
+        temp_dist = std::sqrt(temp_dist);
+      }
       edges.emplace_back(temp_dist, std::make_pair(i, j));
       edges.emplace_back(temp_dist, std::make_pair(j, i));
     }
@@ -49,6 +51,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
   double pZA = inistate.pZA;
   double pZB = inistate.pZB;
   cola::EventParticles particles = (*edata).particles;
+  pls_ = particles;
 
   sourceA = cola::pdgToAZ(inistate.pdgCodeA).first;
   sourceAb = cola::pdgToAZ(inistate.pdgCodeB).first;
@@ -82,15 +85,15 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
   std::vector<std::vector<cola::Particle*>> outClusters;
   std::vector<cola::Particle*> output_vector_A;
   std::vector<cola::Particle*> output_vector_B;
-  std::vector<int> rmapsA;  // repulsion maps with fragments for size A
-  std::vector<int> rmapsB;  // repulsion maps with fragments for size B
+  std::vector<int> rmapsA;
+  std::vector<int> rmapsB;
   int rcountA = 0;
   int rcountB = 0;
-  cola::EventParticles rnucsA;  // protons for size A
-  cola::EventParticles rnucsB;  // protons for size B
+  cola::EventParticles rnucsA;
+  cola::EventParticles rnucsB;
 
-  std::vector<std::vector<uint>> clusters = this->get_connected_components(this->get_cd(ExA, A));
-  std::vector<std::vector<uint>> clusters_B = this->get_connected_components(this->get_cd(ExB, Ab));
+  std::vector<std::vector<uint>> clusters = this->get_comps(this->get_cd(ExA, A), cola::ParticleClass::spectatorA);
+  std::vector<std::vector<uint>> clusters_B = this->get_comps(this->get_cd(ExB, Ab), cola::ParticleClass::spectatorB);
 
   output_vector_A = this->fragments_from_clusters(clusters, nucleons);
   output_vector_B = this->fragments_from_clusters(clusters_B, nucleons_B);
@@ -277,21 +280,21 @@ std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::
   return fragments;
 }
 
-std::vector<std::vector<uint>> GMSTClustering::get_connected_components(double cd) {
+std::vector<std::vector<uint>> GMSTClustering::get_comps(double cd, cola::ParticleClass pClass) {
   std::vector<std::vector<uint>> components;
   std::vector<bool> visited(tree.size(), false);
 
   for (size_t i = 0; i < tree.size(); ++i) {
-    if (!visited[i]) {
+    if (!visited[i] && (pls_[i].pClass == pClass)) {
       std::vector<uint> component;
-      dfs(tree[i], visited, component, cd);
+      dfs(tree[i], visited, component, cd, pClass);
       components.push_back(component);
     }
   }
   return components;
 }
 
-void GMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd) {
+void GMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd, cola::ParticleClass pClass) {
   std::stack<std::shared_ptr<Node>> stack;
   stack.push(node);
 
@@ -300,7 +303,7 @@ void GMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited,
     stack.pop();
 
     for (uint v : current->get_vertices()) {
-      if (!visited[v]) {
+      if (!visited[v] && (pls_[v].pClass == pClass)) {
         visited[v] = true;
         component.push_back(v);
       }

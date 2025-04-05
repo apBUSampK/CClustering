@@ -85,13 +85,14 @@ class GMSTClustering : public MSTClustering {
     uint Zb = 0;
     uint stat_exen_type_ = 4;
     bool consider_rep_ = true;
+    cola::EventParticles pls_;
 
     std::vector<edge> get_vertices(const cola::EventData&) final;
     std::unique_ptr<cola::EventData> get_clusters(std::unique_ptr<cola::EventData>&&, const Node&) final;
     double get_cd(double Ex, uint A);
     std::pair<double, double> get_exens();
-    std::vector<std::vector<uint>> get_connected_components(double);
-    void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd);
+    std::vector<std::vector<uint>> get_comps(double, cola::ParticleClass);
+    void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd, cola::ParticleClass pClass);
     std::vector<cola::Particle*> fragments_from_clusters(const std::vector<std::vector<uint>>&, const cola::EventParticles&);
     cola::EventParticles calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB);
     CLHEP::Hep3Vector get_boost(uint pZ, uint A);
