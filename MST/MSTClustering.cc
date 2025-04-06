@@ -247,7 +247,7 @@ cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<
     if (consider_rep_) {
       momClusters.at(1) = RepulsionStage::CalculateRepulsion(momClusters.at(1), rnucsB, rmapsB);
     }
-    
+
     for (int I = 0; I < momClusters.at(1).size(); ++I) {
       auto fragment = momClusters.at(1).at(I);
       cola::LorentzVector momentum = fragment->momentum;
