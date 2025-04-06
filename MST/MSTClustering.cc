@@ -50,6 +50,8 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
   cola::EventIniState inistate = (*edata).iniState;
   double pZA = inistate.pZA;
   double pZB = inistate.pZB;
+  double Ea;
+  double Eb;
   cola::EventParticles particles = (*edata).particles;
   pls_ = particles;
 
@@ -60,21 +62,39 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
   Z = 0;
   Zb = 0;
 
+  cola::LorentzVector pA = {0.0, 0.0, 0.0, 0.0};
+  cola::LorentzVector pB = {0.0, 0.0, 0.0, 0.0};
   for (auto& particle : particles) {
     auto az = particle.getAZ();
     if (particle.pClass == cola::ParticleClass::spectatorA) {
-      nucleons.push_back(particle);
+      pA += particle.momentum;
+      Ea += particle.momentum.e;
       ++A;
       if (az.second == 1) {
         ++Z;
       }
     }
     if (particle.pClass == cola::ParticleClass::spectatorB) {
-      nucleons_B.push_back(particle);
+      pB += particle.momentum;
+      Eb += particle.momentum.e;
       ++Ab;
       if (az.second == 1) {
         ++Zb;
       }
+    }
+  }
+  // std::cout << pA.z / A << " " << pZA << "\n";
+  auto boostA = this->get_boost(CLHEP::Hep3Vector(pA.x, pA.y, pA.z), Ea, static_cast<double>(A));
+  auto boostB = this->get_boost(CLHEP::Hep3Vector(pB.x, pB.y, pB.z), Eb, static_cast<double>(Ab));
+  // std::cout << boostA.mag() << "\n";
+  for (auto& particle : particles) {
+    if (particle.pClass == cola::ParticleClass::spectatorA) {
+      particle.momentum = particle.momentum.boost(-boostA.x(), -boostA.y(), -boostA.z());
+      nucleons.push_back(particle);
+    }
+    if (particle.pClass == cola::ParticleClass::spectatorB) {
+      particle.momentum = particle.momentum.boost(-boostB.x(), -boostB.y(), -boostB.z());
+      nucleons_B.push_back(particle);
     }
   }
 
@@ -95,9 +115,8 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
   std::vector<std::vector<uint>> clusters = this->get_comps(this->get_cd(ExA, A), cola::ParticleClass::spectatorA);
   std::vector<std::vector<uint>> clusters_B = this->get_comps(this->get_cd(ExB, Ab), cola::ParticleClass::spectatorB);
 
-  output_vector_A = this->fragments_from_clusters(clusters, nucleons);
-  output_vector_B = this->fragments_from_clusters(clusters_B, nucleons_B);
-  std::cout << "DONE\n";
+  output_vector_A = this->fragments_from_clusters(clusters);
+  output_vector_B = this->fragments_from_clusters(clusters_B);
 
   outClusters.push_back(output_vector_A);
   outClusters.push_back(output_vector_B);
@@ -105,7 +124,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
 
   for (uint i = 0; i < clusters.size(); ++i) {
     for (uint j = 0; j < clusters[i].size(); ++j) {
-      cola::Particle* nucleon = &(nucleons.at((clusters[i])[j]));
+      cola::Particle* nucleon = &(pls_.at((clusters[i])[j]));
       if (nucleon->getAZ().second == 1) {
         rnucsA.push_back(*nucleon);
         rmapsA.push_back(rcountA);
@@ -116,7 +135,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
 
   for (uint i = 0; i < clusters_B.size(); ++i) {
     for (uint j = 0; j < clusters_B[i].size(); ++j) {
-      cola::Particle* nucleon = &(nucleons_B.at((clusters_B[i])[j]));
+      cola::Particle* nucleon = &(pls_.at((clusters_B[i])[j]));
       if (nucleon->getAZ().second == 1) {
         rnucsB.push_back(*nucleon);
         rmapsB.push_back(rcountB);
@@ -125,11 +144,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
     ++rcountB;
   }
 
-  auto boostA = this->get_boost(pZA, A);
-  auto boostB = this->get_boost(pZB, Ab);
-
   cola::EventParticles cFragments = this->calculate_momentum(outClusters, ExA, ExB, boostA, boostB, rnucsA, rnucsB, rmapsA, rmapsB);
-
   return std::make_unique<cola::EventData>(cola::EventData{cola::EventIniState{inistate.pdgCodeA, inistate.pdgCodeB, inistate.pZA, inistate.pZB, inistate.energy, inistate.sectNN, inistate.b, inistate.nColl, inistate.nCollPP, inistate.nCollPN, inistate.nCollNN, inistate.nPart, inistate.nPartA, inistate.nPartB, inistate.phiRotA, inistate.thetaRotA, inistate.phiRotB, inistate.thetaRotB, cFragments}, cFragments});
 }
 
@@ -180,7 +195,9 @@ cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<
 
     momentumVectorA->clear();
 
-    momClusters.at(0) = RepulsionStage::CalculateRepulsion(momClusters.at(0), rnucsA, rmapsA);
+    if (consider_rep_) {
+      momClusters.at(0) = RepulsionStage::CalculateRepulsion(momClusters.at(0), rnucsA, rmapsA);
+    }
     for (int I = 0; I < momClusters.at(0).size(); ++I) {
       auto fragment = momClusters.at(0).at(I);
       cola::LorentzVector momentum = fragment->momentum;
@@ -227,7 +244,10 @@ cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<
 
     momentumVectorB->clear();
 
-    momClusters.at(1) = RepulsionStage::CalculateRepulsion(momClusters.at(1), rnucsB, rmapsB);
+    if (consider_rep_) {
+      momClusters.at(1) = RepulsionStage::CalculateRepulsion(momClusters.at(1), rnucsB, rmapsB);
+    }
+    
     for (int I = 0; I < momClusters.at(1).size(); ++I) {
       auto fragment = momClusters.at(1).at(I);
       cola::LorentzVector momentum = fragment->momentum;
@@ -255,7 +275,7 @@ double GMSTClustering::get_cd(double Ex, uint A) {
   return d0 * std::pow(dep, 1. / 3.);
 }
 
-std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::vector<std::vector<uint>>& clusters, const cola::EventParticles& nucleons) {
+std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::vector<std::vector<uint>>& clusters) {
   std::vector<cola::Particle*> fragments;
 
   for (uint i = 0; i < clusters.size(); ++i) {
@@ -263,8 +283,7 @@ std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::
     uint A_clust = 0;
     cola::LorentzVector position = {0.0, 0.0, 0.0, 0.0};
     for (uint j = 0; j < clusters[i].size(); ++j) {
-      std::cout << clusters[i][j] << " " << nucleons.size() << "\n";
-      auto nucleon = &(nucleons.at(clusters[i][j]));
+      auto nucleon = &(pls_.at(clusters[i][j]));
       position += nucleon->position;
       if (nucleon->getAZ().second == 1) {
         Z_clust += 1;
@@ -347,20 +366,21 @@ std::pair<double, double> GMSTClustering::get_exens() {
   return std::make_pair(energy_A, energy_B);
 }
 
-CLHEP::Hep3Vector GMSTClustering::get_boost(uint pZ, uint A) {
-  CLHEP::HepLorentzVector boost_vec;
-  if (A != 0) {
-    double E = std::sqrt((pZ * pZ)/(A * A) + (nucleonAverMass * nucleonAverMass));
-    CLHEP::HepLorentzVector futureBoost(0.0, 0.0, pZ / A, E);
-    if (!futureBoost.isTimelike()) {
-      std::cout << "Side" << " " << E << " nucl = " << A << std::endl;
+CLHEP::Hep3Vector GMSTClustering::get_boost(CLHEP::Hep3Vector p, double E, double A) {
+  if(A != 0.0) {
+    // std::cout << p.x() / A << "\n";
+    CLHEP::HepLorentzVector futureBoost(p.x(), p.y(), p.z(), E);
+    if(!futureBoost.isTimelike()) {
+      std::cout << "Not TimeLike Hep3LorentsVector at " << E << " nucl = " << A << std::endl;
     }
-    boost_vec = futureBoost.boostVector();
+    // std::cout << p.x() / A << "\n";
+    // std::cout << futureBoost.boostVector().mag() << " " << p.x() / A << " " << p.z() / A << "\n";
+    // std::cout << E << "\n";
+    return futureBoost.boostVector();
   }
   else {
-     boost_vec = CLHEP::Hep3Vector(0.0, 0.0, 0.0);
+    return CLHEP::Hep3Vector(0.0, 0.0, 0.0);
   }
-  return boost_vec.boostVector();
 }
 
 cola::LorentzVector GMSTClustering::ToColaLorentzVector(G4LorentzVector lv) {

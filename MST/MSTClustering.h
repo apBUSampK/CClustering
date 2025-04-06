@@ -93,9 +93,9 @@ class GMSTClustering : public MSTClustering {
     std::pair<double, double> get_exens();
     std::vector<std::vector<uint>> get_comps(double, cola::ParticleClass);
     void dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd, cola::ParticleClass pClass);
-    std::vector<cola::Particle*> fragments_from_clusters(const std::vector<std::vector<uint>>&, const cola::EventParticles&);
+    std::vector<cola::Particle*> fragments_from_clusters(const std::vector<std::vector<uint>>&);
     cola::EventParticles calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB);
-    CLHEP::Hep3Vector get_boost(uint pZ, uint A);
+    CLHEP::Hep3Vector get_boost(CLHEP::Hep3Vector p, double E, double A);
     cola::LorentzVector ToColaLorentzVector(G4LorentzVector lv);
 
 
