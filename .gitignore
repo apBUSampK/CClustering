@@ -3,10 +3,10 @@
 .vscode/
 /cmake/
 /CMakeFiles/
-CClusteringConfig.cmake
-CClusteringConfigVersion.cmake
-cmake_install.cmake
-CCMakeCache.txt
-install_manifest.txt
-libClustering.so
-Makefile
+# CClusteringConfig.cmake
+# CClusteringConfigVersion.cmake
+# cmake_install.cmake
+# CCMakeCache.txt
+# install_manifest.txt
+# libClustering.so
+# Makefile
