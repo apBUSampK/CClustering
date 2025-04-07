@@ -1,4 +1,0 @@
-<program>
-<generator name="cglauber" fermiMom="1" name_a="O" name_b="O" energy="1e3" is_collider="1"/>
-<writer name="croot" file_name="out.root" format="UniGen" buff_size="100"/>
-</program>
