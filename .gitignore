@@ -1,7 +1,6 @@
 /.idea/
 /cmake-build-debug/
 .vscode/
-/cmake/
 /CMakeFiles/
 CClusteringConfig.cmake
 CClusteringConfigVersion.cmake
