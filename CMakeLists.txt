@@ -16,7 +16,7 @@ set(COLA_MODULE_NAME CClustering)
 file(GLOB excitation_cc_files "ExcitationEnergy/*.cc")
 file(GLOB excitation_h_files "ExcitationEnergy/*.h")
 
-set(srcs MST/MSTClustering.h Wrapper/CClusteringFactory.cc MST/MSTClustering.cc RepulsionStage/Repulsion.hh RepulsionStage/Repulsion.cc ${excitation_cc_files})
+set(srcs MST/MSTClustering.h Wrapper/CClusteringFactory.cc MST/MSTClustering.cc MST/GMSTClustering.cc RepulsionStage/Repulsion.hh RepulsionStage/Repulsion.cc ${excitation_cc_files})
 add_library(CClustering SHARED ${srcs})
 
 target_include_directories(CClustering PUBLIC
@@ -30,7 +30,7 @@ target_include_directories(CClustering PUBLIC
 target_link_libraries(CClustering PUBLIC COLA ${Geant4_LIBRARIES})
 
 # Specify public headers for installation
-set(PROJECT_PUBLIC_HEADERS "Wrapper/CClusteringFactory.hh;Wrapper/CClustering.hh;RepulsionStage/Repulsion.hh;MST/MSTClustering.h;ExcitationEnergy/Ericson.h;ExcitationEnergy/ExcitationEnergy.h;ExcitationEnergy/GaimardSchmidt.h"
+set(PROJECT_PUBLIC_HEADERS "Wrapper/CClusteringFactory.hh;Wrapper/CClustering.hh;RepulsionStage/Repulsion.hh;MST/MSTClustering.h;MST/GMSTClustering.h;ExcitationEnergy/Ericson.h;ExcitationEnergy/ExcitationEnergy.h;ExcitationEnergy/GaimardSchmidt.h"
 ${excitation_h_files})
 
 set_target_properties(CClustering PROPERTIES PUBLIC_HEADER "${PROJECT_PUBLIC_HEADERS}")
