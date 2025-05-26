@@ -6,6 +6,7 @@
 
 #include "CClusteringFactory.hh"
 #include "MSTClustering.h"
+#include "GMSTClustering.h"
 
 cola::VFilter* CClusteringFactory::create(const std::map<std::string, std::string>& paramMap) {
   if (paramMap.at("clustering_type") == "GMST") {
