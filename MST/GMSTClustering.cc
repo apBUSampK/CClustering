@@ -1,4 +1,4 @@
-#include "GMSTCustering.h"
+#include "GMSTClustering.h"
 #include "Repulsion.hh"
 #include "ExcitationEnergy.h"
 #include <limits>
@@ -107,6 +107,25 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
 
   cola::EventParticles cFragments = this->calculate_momentum(outClusters, ExA, ExB, boostA, boostB, rnucsA, rnucsB, rmapsA, rmapsB);
   return std::make_unique<cola::EventData>(cola::EventData{cola::EventIniState{inistate.pdgCodeA, inistate.pdgCodeB, inistate.pZA, inistate.pZB, inistate.energy, inistate.sectNN, inistate.b, inistate.nColl, inistate.nCollPP, inistate.nCollPN, inistate.nCollNN, inistate.nPart, inistate.nPartA, inistate.nPartB, inistate.phiRotA, inistate.thetaRotA, inistate.phiRotB, inistate.thetaRotB, cFragments}, cFragments});
+}
+
+std::vector<MSTClustering::edge> GMSTClustering::get_vertices(const cola::EventData& edata) {
+  cola::EventParticles particles = edata.particles;
+  std::vector<edge> edges;
+  for (size_t i = 0; i < particles.size(); i++) {
+    for (size_t j = i + 1; j < particles.size(); j++) {
+      double temp_dist = std::numeric_limits<double>::infinity();
+      if (particles[i].pClass == particles[j].pClass) {
+        temp_dist = std::pow(particles[i].position.x - particles[j].position.x, 2);
+        temp_dist += std::pow(particles[i].position.y - particles[j].position.y, 2);
+        temp_dist += std::pow(particles[i].position.z - particles[j].position.z, 2);
+        temp_dist = std::sqrt(temp_dist);
+      }
+      edges.emplace_back(temp_dist, std::make_pair(i, j));
+      edges.emplace_back(temp_dist, std::make_pair(j, i));
+    }
+  }
+  return edges;
 }
 
 cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB) {
