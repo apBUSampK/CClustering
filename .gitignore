@@ -2,6 +2,7 @@
 /cmake-build-debug/
 .vscode/
 /CMakeFiles/
+/build/
 CClusteringConfig.cmake
 CClusteringConfigVersion.cmake
 cmake_install.cmake

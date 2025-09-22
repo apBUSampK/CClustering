@@ -14,13 +14,13 @@ class MSTClustering : public cola::VConverter {
 public:
     MSTClustering() = default;
     ~MSTClustering() override = default;
-    MSTClustering& operator=(const MSTClustering&) = delete; //verbosity, may delete later
+    MSTClustering& operator=(const MSTClustering&) = delete;
     MSTClustering& operator=(MSTClustering&&) = delete;
     MSTClustering(const MSTClustering&) = delete;
     MSTClustering(MSTClustering&&) = delete;
 
     std::unique_ptr<cola::EventData> operator()(std::unique_ptr<cola::EventData>&& data) final {
-        construct_tree(get_vertices(*data), data->particles.size());
+        construct_tree(get_edges(*data), data->particles.size());
         return get_clusters(std::move(data), *tree.at(0));
     }
 
@@ -53,10 +53,10 @@ protected:
 
 private:
 
-    void construct_tree(std::vector<edge>&& verticeData, size_t size);
+    void construct_tree(std::vector<edge>&& edgeData, size_t size);
 
     // get full graph data from EventData
-    virtual std::vector<edge> get_vertices(const cola::EventData&) = 0;
+    virtual std::vector<edge> get_edges(const cola::EventData&) = 0;
     // construct clusters (Node is MST root)
     virtual std::unique_ptr<cola::EventData> get_clusters(std::unique_ptr<cola::EventData>&&, const Node&) = 0;
 };

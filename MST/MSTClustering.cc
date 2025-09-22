@@ -2,19 +2,19 @@
 // Created by _amp_ on 10/21/24.
 //
 
-#include "MSTClustering.h"
+#include "MSTClustering.hh"
 #include "G4NucleiProperties.hh"
 #include "Repulsion.hh"
 #include "G4ExcitationHandler.hh"
-#include "ExcitationEnergy.h"
+#include "ExcitationEnergy.hh"
 #include <limits>
 #include <stack>
 
-void MSTClustering::construct_tree(std::vector<edge>&& verticeData, size_t size) {
+void MSTClustering::construct_tree(std::vector<edge>&& edgeData, size_t size) {
   tree.clear();
   for (int i = 0; i < size; i++) tree.push_back(std::make_shared<Node>(i));
-  std::sort(verticeData.begin(), verticeData.end());
-  for (auto it : verticeData) {
+  std::sort(edgeData.begin(), edgeData.end());
+  for (auto it : edgeData) {
     uint v1 = it.second.first;
     uint v2 = it.second.second;
     if (tree[v1].get() != tree[v2].get()) {

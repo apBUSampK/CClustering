@@ -1,7 +1,7 @@
-#include "ExcitationEnergy.h"
+#include "ExcitationEnergy.hh"
 
-#include "Ericson.h"
-#include "GaimardSchmidt.h"
+#include "Ericson.hh"
+#include "GaimardSchmidt.hh"
 
 ExcitationEnergy::ExcitationEnergy(G4int ExEnLabel_in, G4int initA_in): ExEnLabel(3) {
     ExEnLabel = ExEnLabel_in;

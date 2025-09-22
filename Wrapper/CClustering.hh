@@ -6,6 +6,6 @@
 #define CCLUSTERING_CCLUSTERINGMODULE_HH
 
 #include "CClusteringFactory.hh"
-#include "CClusteringGenerator.hh"
+#include "CoordinateMSTClustering.hh"
 
 #endif //CCLUSTERING_CCLUSTERINGMODULE_HH

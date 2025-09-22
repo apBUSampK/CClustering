@@ -1,4 +1,4 @@
-#include "GaimardSchmidt.h"
+#include "GaimardSchmidt.hh"
 
 G4double GaimardSchmidt(G4double E,G4double EvaporationEnergy, G4int a,G4int A){
   G4double g0=16.;

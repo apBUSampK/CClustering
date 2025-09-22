@@ -1,10 +1,10 @@
-#include "GMSTClustering.h"
+#include "CoordinateMSTClustering.hh"
 #include "Repulsion.hh"
-#include "ExcitationEnergy.h"
+#include "ExcitationEnergy.hh"
 #include <limits>
 #include <stack>
 
-std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<cola::EventData>&& edata, const Node& rootnode) {
+std::unique_ptr<cola::EventData> CoordinateMSTClustering::get_clusters(std::unique_ptr<cola::EventData>&& edata, const Node& rootnode) {
   cola::EventParticles nucleons;
   cola::EventParticles nucleons_B;
 
@@ -109,7 +109,7 @@ std::unique_ptr<cola::EventData> GMSTClustering::get_clusters(std::unique_ptr<co
   return std::make_unique<cola::EventData>(cola::EventData{cola::EventIniState{inistate.pdgCodeA, inistate.pdgCodeB, inistate.pZA, inistate.pZB, inistate.energy, inistate.sectNN, inistate.b, inistate.nColl, inistate.nCollPP, inistate.nCollPN, inistate.nCollNN, inistate.nPart, inistate.nPartA, inistate.nPartB, inistate.phiRotA, inistate.thetaRotA, inistate.phiRotB, inistate.thetaRotB, cFragments}, cFragments});
 }
 
-std::vector<MSTClustering::edge> GMSTClustering::get_vertices(const cola::EventData& edata) {
+std::vector<MSTClustering::edge> CoordinateMSTClustering::get_edges(const cola::EventData& edata) {
   cola::EventParticles particles = edata.particles;
   std::vector<edge> edges;
   for (size_t i = 0; i < particles.size(); i++) {
@@ -128,7 +128,7 @@ std::vector<MSTClustering::edge> GMSTClustering::get_vertices(const cola::EventD
   return edges;
 }
 
-cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB) {
+cola::EventParticles CoordinateMSTClustering::calculate_momentum(std::vector<std::vector<cola::Particle*>> noMomClusters, double ExEnA, double ExEnB, CLHEP::Hep3Vector boostA, CLHEP::Hep3Vector boostB, cola::EventParticles rnucsA, cola::EventParticles rnucsB, std::vector<int> rmapsA, std::vector<int> rmapsB) {
   cola::EventParticles particles;
 
   auto momClusters = noMomClusters;
@@ -183,6 +183,7 @@ cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<
       cola::LorentzVector momentum = fragment->momentum;
       momentum.boost(boostA.x(), boostA.y(), boostA.z());
       fragment->momentum = momentum;
+      fragment->pClass = cola::ParticleClass::spectatorA;
 
       particles.push_back(*fragment);
     }
@@ -233,6 +234,7 @@ cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<
       cola::LorentzVector momentum = fragment->momentum;
       momentum.boost(boostB.x(), boostB.y(), boostB.z());
       fragment->momentum = momentum;
+      fragment->pClass = cola::ParticleClass::spectatorB;
 
       particles.push_back(*fragment);
     }
@@ -246,7 +248,7 @@ cola::EventParticles GMSTClustering::calculate_momentum(std::vector<std::vector<
   return particles;
 }
 
-double GMSTClustering::get_cd(double Ex, uint A) {
+double CoordinateMSTClustering::get_cd(double Ex, uint A) {
   if ((Ex / double(A)) < 2.17 * MeV) {
     return d0;
   }
@@ -255,7 +257,7 @@ double GMSTClustering::get_cd(double Ex, uint A) {
   return d0 * std::pow(dep, 1. / 3.);
 }
 
-std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::vector<std::vector<uint>>& clusters) {
+std::vector<cola::Particle*> CoordinateMSTClustering::fragments_from_clusters(const std::vector<std::vector<uint>>& clusters) {
   std::vector<cola::Particle*> fragments;
 
   for (uint i = 0; i < clusters.size(); ++i) {
@@ -279,7 +281,7 @@ std::vector<cola::Particle*> GMSTClustering::fragments_from_clusters(const std::
   return fragments;
 }
 
-std::vector<std::vector<uint>> GMSTClustering::get_comps(double cd, cola::ParticleClass pClass) {
+std::vector<std::vector<uint>> CoordinateMSTClustering::get_comps(double cd, cola::ParticleClass pClass) {
   std::vector<std::vector<uint>> components;
   std::vector<bool> visited(tree.size(), false);
 
@@ -293,7 +295,7 @@ std::vector<std::vector<uint>> GMSTClustering::get_comps(double cd, cola::Partic
   return components;
 }
 
-void GMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd, cola::ParticleClass pClass) {
+void CoordinateMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited, std::vector<uint>& component, double cd, cola::ParticleClass pClass) {
   std::stack<std::shared_ptr<Node>> stack;
   stack.push(node);
 
@@ -318,7 +320,7 @@ void GMSTClustering::dfs(std::shared_ptr<Node> node, std::vector<bool>& visited,
   }
 }
 
-std::pair<double, double> GMSTClustering::get_exens() {
+std::pair<double, double> CoordinateMSTClustering::get_exens() {
   auto ExEnA = std::make_unique<ExcitationEnergy>(stat_exen_type_, sourceA);
   auto ExEnB = std::make_unique<ExcitationEnergy>(stat_exen_type_, sourceAb);
 
@@ -346,7 +348,7 @@ std::pair<double, double> GMSTClustering::get_exens() {
   return std::make_pair(energy_A, energy_B);
 }
 
-CLHEP::Hep3Vector GMSTClustering::get_boost(CLHEP::Hep3Vector p, double E, double A) {
+CLHEP::Hep3Vector CoordinateMSTClustering::get_boost(CLHEP::Hep3Vector p, double E, double A) {
   if(A != 0.0) {
     // std::cout << p.x() / A << "\n";
     CLHEP::HepLorentzVector futureBoost(p.x(), p.y(), p.z(), E);
@@ -363,7 +365,7 @@ CLHEP::Hep3Vector GMSTClustering::get_boost(CLHEP::Hep3Vector p, double E, doubl
   }
 }
 
-cola::LorentzVector GMSTClustering::ToColaLorentzVector(G4LorentzVector lv) {
+cola::LorentzVector CoordinateMSTClustering::ToColaLorentzVector(G4LorentzVector lv) {
   cola::LorentzVector vec;
   vec.e = lv.e();
   vec.x = lv.x();

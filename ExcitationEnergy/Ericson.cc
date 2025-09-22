@@ -1,4 +1,4 @@
-#include "Ericson.h"
+#include "Ericson.hh"
 
 G4double Ericson(G4double E,G4double EvaporationEnergy, G4int a,G4int A){
   G4double g0=16; //16 was in Shidenberger - not influence calculations at all cause its freeze out in distr normalization.

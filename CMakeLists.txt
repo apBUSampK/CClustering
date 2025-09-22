@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(CClustering VERSION 1.0)
+project(CClustering VERSION 1.1)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -13,10 +13,8 @@ set(CMAKE_INSTALL_PREFIX ${COLA_DIR})
 set(COLA_MODULE_NAME CClustering)
 
 # Add library target
-file(GLOB excitation_cc_files "ExcitationEnergy/*.cc")
-file(GLOB excitation_h_files "ExcitationEnergy/*.h")
-
-set(srcs MST/MSTClustering.h Wrapper/CClusteringFactory.cc MST/MSTClustering.cc MST/GMSTClustering.cc RepulsionStage/Repulsion.hh RepulsionStage/Repulsion.cc ${excitation_cc_files})
+set(srcs Wrapper/CClusteringFactory.cc MST/MSTClustering.cc MST/CoordinateMSTClustering.cc RepulsionStage/Repulsion.cc
+        ExcitationEnergy/Ericson.cc ExcitationEnergy/GaimardSchmidt.cc ExcitationEnergy/ExcitationEnergy.cc )
 add_library(CClustering SHARED ${srcs})
 
 target_include_directories(CClustering PUBLIC
@@ -24,14 +22,13 @@ target_include_directories(CClustering PUBLIC
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/RepulsionStage>"
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/ExcitationEnergy>"
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Wrapper>"
-        ${Geant4_INCLUDE_DIR}
         $<INSTALL_INTERFACE:include/${COLA_MODULE_NAME}>)
 
 target_link_libraries(CClustering PUBLIC COLA ${Geant4_LIBRARIES})
 
 # Specify public headers for installation
-set(PROJECT_PUBLIC_HEADERS "Wrapper/CClusteringFactory.hh;Wrapper/CClustering.hh;RepulsionStage/Repulsion.hh;MST/MSTClustering.h;MST/GMSTClustering.h;ExcitationEnergy/Ericson.h;ExcitationEnergy/ExcitationEnergy.h;ExcitationEnergy/GaimardSchmidt.h"
-${excitation_h_files})
+set(PROJECT_PUBLIC_HEADERS "Wrapper/CClusteringFactory.hh;Wrapper/CClustering.hh;RepulsionStage/Repulsion.hh;MST/MSTClustering.hh;MST/CoordinateMSTClustering.hh;\
+ExcitationEnergy/Ericson.hh;ExcitationEnergy/ExcitationEnergy.hh;ExcitationEnergy/GaimardSchmidt.hh")
 
 set_target_properties(CClustering PROPERTIES PUBLIC_HEADER "${PROJECT_PUBLIC_HEADERS}")
 

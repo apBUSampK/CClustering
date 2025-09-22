@@ -4,17 +4,17 @@
 #include <memory>
 #include <algorithm>
 
-#include "MSTClustering.h"
+#include "MSTClustering.hh"
 #include "G4ExcitationHandler.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4FermiPhaseSpaceDecay.hh"
 #include "G4ReactionProductVector.hh"
 #include "G4NucleiProperties.hh"
 
-class GMSTClustering : public MSTClustering {
+class CoordinateMSTClustering : public MSTClustering {
   public:
-    GMSTClustering() = default;
-    GMSTClustering(uint stat_exen_type, uint consider_rep) : stat_exen_type_(stat_exen_type), consider_rep_(static_cast<bool>(consider_rep)) {};
+    CoordinateMSTClustering() = delete;
+    CoordinateMSTClustering(uint stat_exen_type, uint consider_rep) : stat_exen_type_(stat_exen_type), consider_rep_(static_cast<bool>(consider_rep)) {};
   protected:
     using edge = std::pair<double, std::pair<uint, uint>>;
   private:
@@ -30,7 +30,7 @@ class GMSTClustering : public MSTClustering {
     bool consider_rep_ = true;
     cola::EventParticles pls_;
 
-    std::vector<edge> get_vertices(const cola::EventData&) final;
+    std::vector<edge> get_edges(const cola::EventData&) final;
     std::unique_ptr<cola::EventData> get_clusters(std::unique_ptr<cola::EventData>&&, const Node&) final;
     double get_cd(double Ex, uint A);
     std::pair<double, double> get_exens();
