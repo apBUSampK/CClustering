@@ -1,7 +1,0 @@
-/home/ekaterina/Документы/CClustering/CMakeFiles/CClustering.dir
-/home/ekaterina/Документы/CClustering/CMakeFiles/edit_cache.dir
-/home/ekaterina/Документы/CClustering/CMakeFiles/rebuild_cache.dir
-/home/ekaterina/Документы/CClustering/CMakeFiles/list_install_components.dir
-/home/ekaterina/Документы/CClustering/CMakeFiles/install.dir
-/home/ekaterina/Документы/CClustering/CMakeFiles/install/local.dir
-/home/ekaterina/Документы/CClustering/CMakeFiles/install/strip.dir
