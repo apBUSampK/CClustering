@@ -5,7 +5,7 @@
 #ifndef CCLUSTERING_CCLUSTERINGMODULE_HH
 #define CCLUSTERING_CCLUSTERINGMODULE_HH
 
-#include "CClusteringFactory.hh"
 #include "CoordinateMSTClustering.hh"
+#include "COLA.hh"
 
 #endif //CCLUSTERING_CCLUSTERINGMODULE_HH

@@ -1,0 +1,6 @@
+@PACKAGE_INIT@
+
+find_package(COLA REQUIRED)
+find_package(Geant4 REQUIRED)
+
+include(@CMAKE_INSTALL_PREFIX@/lib/cmake/CPreEquilibrium/CPreEquilibriumExport.cmake)

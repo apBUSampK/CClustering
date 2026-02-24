@@ -3,6 +3,19 @@
 #include "Ericson.hh"
 #include "GaimardSchmidt.hh"
 
+#include "G4SystemOfUnits.hh"
+
+// default values for excitation energy models parameters
+namespace ExcEnDefaultVals {
+    constexpr double e_0 = 11.5 * MeV;
+    constexpr double sigma0 = 0.005;
+    constexpr double b0 = 2;
+    constexpr double sigmaE0 = 1 * MeV;
+    constexpr double c0 = 0.1;
+    constexpr double Pe = 24 * MeV;
+    constexpr double Pm = 0.2;
+}
+
 ExcitationEnergy::ExcitationEnergy(G4int ExEnLabel_in, G4int initA_in): ExEnLabel(3) {
     ExEnLabel = ExEnLabel_in;
     initA = initA_in;
@@ -10,15 +23,20 @@ ExcitationEnergy::ExcitationEnergy(G4int ExEnLabel_in, G4int initA_in): ExEnLabe
     UpExEn = 100*initA;
     Ebound = 40;
 
-    std::string filepath(__FILE__);
-    std::string filename(basename(__FILE__));
-    filepath.erase(filepath.length() - filename.length(), filename.length());
+    #ifdef DATA_INSTALL
+    std::string filepath(DATA_INSTALL);
+    #else
+    std::string filepath("./ExcitationEnergy/");
+    #endif
 
     filepath += "CorrectedALADINParameters.dat";
     ParamFile.open(filepath.c_str());
 
     SetParametersCorrectedALADINFromFile();
-    SetParametersALADIN(11,0.07,2);//8.13;0.07;2
+    SetParametersALADIN(ExcEnDefaultVals::e_0, ExcEnDefaultVals::sigma0, ExcEnDefaultVals::b0);
+    SetParametersParabolicApproximation(ExcEnDefaultVals::Pe, ExcEnDefaultVals::Pm, ExcEnDefaultVals::sigma0, ExcEnDefaultVals::c0, 0.01);
+    SetParametersHybridFit(11.46648905 * MeV, -1.84830078 * MeV, -58.53674677 * MeV, 284.66431513 * MeV, -637.51406293 * MeV, 652.80324427 * MeV, -251.28205381 * MeV, 0.4 * MeV, 0.5, 0.2);
+  
 }
 
 ExcitationEnergy::~ExcitationEnergy(){}

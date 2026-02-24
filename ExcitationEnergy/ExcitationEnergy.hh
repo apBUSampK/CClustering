@@ -4,7 +4,8 @@
 #include "globals.hh"
 #include "Randomize.hh"
 #include "G4ExceptionHandler.hh"
-#include "cmath"
+
+#include <cmath>
 #include <fstream>
 #include <libgen.h>
 

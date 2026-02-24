@@ -19,48 +19,47 @@ constexpr double totalTime = 200 * fm / CLHEP::c_light;
 constexpr double iterations = 1000;
 constexpr double max_adaptive_delta = std::numeric_limits<double>::max();
 
-std::vector<cola::Particle*> CalculateRepulsion(std::vector<cola::Particle*> frags, cola::EventParticles nucleons, const std::vector<int>& maps);
+cola::EventParticles CalculateRepulsion(cola::EventParticles&& frags);
 
 class BHNode {
  public:
-  int totalA; // total proton count
-  G4ThreeVector cr; // mean coordinates of the charges in box
-  G4ThreeVector ctr; // coordinates of the box center
+  int Z; // total charge
+  cola::Vector3<double> cr; // mean coordinates of the charges in box
+  cola::Vector3<double> ctr; // coordinates of the box center
   std::vector<std::unique_ptr<BHNode>> children; // child nodes
   int index; // -1 if > 1 particles, index in nucleons vector otherwise
   double size; // size of the box
 
   BHNode() = default;
-  BHNode(double size, G4ThreeVector ctr) : size(size), ctr(ctr), totalA(0), cr({0.0, 0.0, 0.0}), index(-1) {};
+  BHNode(double size, cola::Vector3<double>& ctr) : size(size), ctr(ctr), Z(0), cr({0.0, 0.0, 0.0}), index(-1) {};
   ~BHNode() = default;
   void Divide();
 };
 
 class BHTree {
  public:
-  explicit BHTree(const cola::EventParticles* nucleons, std::vector<cola::Particle*>* frags, const std::vector<int>* maps);
+  explicit BHTree(cola::EventParticles& frags);
 
-  std::vector<G4ThreeVector> Iterate(double time_delta);
+  std::vector<cola::Vector3<double>> Iterate(double time_delta);
 
   double GetAdaptiveTimeDelta() const;
 
  private:
   std::unique_ptr<BHNode> rootnode_;
-  std::vector<cola::Particle*>* frags_;
-  const std::vector<int>* maps_;
-  std::vector<G4ThreeVector> fs_;
+  cola::EventParticles& frags_;
+  std::vector<cola::Vector3<double>> fs_;
 
-  void BuildBHTree(const cola::EventParticles* nucleons);
+  void BuildBHTree(const cola::EventParticles& frags);
 
-  std::unique_ptr<BHNode> InitializeRoot(const cola::EventParticles* nucleons);
+  std::unique_ptr<BHNode> InitializeRoot(const cola::EventParticles& frags);
 
   void GetForces(const BHNode* node);
 
-  G4ThreeVector Force(const BHNode* rootnode, const BHNode* node) const;
+  cola::Vector3<double> Force(const BHNode* rootnode, const BHNode* node) const;
 
-  G4ThreeVector DuoForce(const G4ThreeVector vec, const double& from_totalA) const;
+  cola::Vector3<double> DuoForce(const cola::Vector3<double> vec, const double& from_totalA) const;
 
-  void InsertNucleon(const std::unique_ptr<BHNode>& node, const G4ThreeVector& cords, int pIndex);
+  void InsertNucleon(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex);
 };
 
 }

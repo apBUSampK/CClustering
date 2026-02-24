@@ -7,9 +7,15 @@
 
 #include "COLA.hh"
 
-class CClusteringFactory final: public cola::VFactory {
+#include <optional>
+
+class CPreEquiilibriumFactory final: public cola::VFactory {
 public:
     cola::VFilter* create(const std::map<std::string, std::string>&) final;
+private:
+    std::optional<bool> repulsion;
+    std::optional<bool> momentum;
+    std::optional<int> excitationEnergyType;
 };
 
 #endif //CGLAUBER_CCLUSTERINGFACTORY_HH
