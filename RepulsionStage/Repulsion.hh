@@ -47,7 +47,7 @@ class BHTree {
  private:
   std::unique_ptr<BHNode> rootnode_;
   cola::EventParticles& frags_;
-  std::vector<cola::Vector3<double>> fs_;
+  std::vector<cola::Vector3<double>> fs_; //Forces
 
   void BuildBHTree(const cola::EventParticles& frags);
 
@@ -59,7 +59,7 @@ class BHTree {
 
   cola::Vector3<double> DuoForce(const cola::Vector3<double> vec, const double& from_totalA) const;
 
-  void InsertNucleon(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex);
+  void InsertFragment(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex);
 };
 
 }

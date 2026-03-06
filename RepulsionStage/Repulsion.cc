@@ -51,11 +51,11 @@ void BHTree::BuildBHTree(const cola::EventParticles& frags) {
   rootnode_ = InitializeRoot(frags);
 
   for (size_t i = 0; i < frags.size(); i++) {
-    InsertNucleon(rootnode_, frags.at(i).position.spatialPart(), i);
+    InsertFragment(rootnode_, frags.at(i).position.spatialPart(), i);
   }
 }
 
-void BHTree::InsertNucleon(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex) {
+void BHTree::InsertFragment(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex) {
   if (node->Z == 0) {
     node->Z = 1;
     node->cr = cords;
@@ -167,11 +167,11 @@ cola::Vector3<double> BHTree::DuoForce(const cola::Vector3<double> vec, const do
 void BHNode::Divide() {
   children.resize(8);
   for (size_t i = 0; i < 8; i++) {
-    cola::Vector3<double> offset(
+    cola::Vector3<double> offset{
       (i & 1 ? 1 : -1) * size / 4.0,
       (i & 2 ? 1 : -1) * size / 4.0,
       (i & 4 ? 1 : -1) * size / 4.0
-    );
+    };
     children[i] = std::make_unique<BHNode>(size / 2.0, ctr + offset);
   }
 }

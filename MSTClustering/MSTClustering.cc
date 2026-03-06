@@ -20,7 +20,9 @@ void MSTClustering::construct_trees(std::vector<Edge> &&edgeData)
         treeA.emplace(&(*iter), std::make_shared<Node>(&(*iter)));
     for (auto iter = spectIterB; iter < endIter; iter++)
         treeB.emplace(&(*iter), std::make_shared<Node>(&(*iter)));
-        
+    
+    // sort the edges for hierarchical tree
+    std::sort(edgeData.begin(), edgeData.end(), [](Edge l, Edge r) {return l.size < r.size;});
     // merge nodes into complete trees using edgeData
     for (auto it : edgeData)
     {

@@ -183,7 +183,7 @@ cola::EventParticles CoordinateMSTClustering::_process_side(const cola::EventDat
     {
         cluster.momentum.e = std::sqrt(
             std::pow(G4NucleiProperties::GetNuclearMass(static_cast<G4int>(cluster.getAZ().first), static_cast<G4int>(cluster.getAZ().second)), 2) +
-            cluster.momentum.x*cluster.momentum.x + cluster.momentum.y*cluster.momentum.y + cluster.momentum.z*cluster.momentum.z);
+            cluster.momentum.spatialPart().mag2());
         cluster.momentum.boost(pNucleus);
     }
 
