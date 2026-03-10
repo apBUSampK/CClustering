@@ -26,14 +26,23 @@ constexpr double d_opt = 0.29041;
 
 std::unique_ptr<cola::EventData> CoordinateMSTClustering::get_clusters(std::unique_ptr<cola::EventData> &&data)
 {
+    cola::EventParticles clustersA;
+    cola::EventParticles clustersB;
+
     // get clusters
-    auto clustersA = _process_side(*data, cola::ParticleClass::spectatorA);
-    auto clustersB = _process_side(*data, cola::ParticleClass::spectatorB);
+    if (rootA != nullptr)
+        clustersA = _process_side(*data, cola::ParticleClass::spectatorA);
+    if (rootB != nullptr)
+        clustersB = _process_side(*data, cola::ParticleClass::spectatorB);
+
     // erase spectator nucleons
-    data->particles.erase(spectIterA, endIter);
+    data->particles.erase(spectIterA != endIter ? spectIterA : spectIterB, endIter);
+    
     // append clusters
-    data->particles.insert(data->particles.end(), clustersA.begin(), clustersA.end());
-    data->particles.insert(data->particles.end(), clustersB.begin(), clustersB.end());
+    if (rootA != nullptr)
+        data->particles.insert(data->particles.end(), clustersA.begin(), clustersA.end());
+    if (rootB != nullptr)
+        data->particles.insert(data->particles.end(), clustersB.begin(), clustersB.end());
 
     return std::move(data);
 }
@@ -43,13 +52,16 @@ std::vector<MSTClustering::Edge> CoordinateMSTClustering::get_edges(const cola::
 {
     std::vector<Edge> edges;
     
-    // particle vector is sorted, process spectatorA nucleons
-    for (auto iter = spectIterA; iter != spectIterB; iter++)
+    // particle vector is sorted, process spectatorA nucleons (check for no spectatorA nucleons)
+    if (spectIterA != endIter)
     {
-        for (auto jter = iter + 1; jter != spectIterB; jter++)
+        for (auto iter = spectIterA; iter != spectIterB; iter++)
         {
-            auto delta = iter->position - jter->position;
-            edges.emplace_back(std::make_pair(&(*iter), &(*jter)), std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z), cola::ParticleClass::spectatorA);
+            for (auto jter = iter + 1; jter != spectIterB; jter++)
+            {
+                auto delta = iter->position - jter->position;
+                edges.emplace_back(std::make_pair(&(*iter), &(*jter)), std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z), cola::ParticleClass::spectatorA);
+            }
         }
     }
     // repeat for spectatorB nucleons
@@ -91,6 +103,9 @@ cola::EventParticles CoordinateMSTClustering::_process_side(const cola::EventDat
     uint count = 0;
 
     auto& root = side == cola::ParticleClass::spectatorA ? rootA : rootB;
+    auto bIter = side == cola::ParticleClass::spectatorA ? spectIterA : spectIterB;
+    auto eIter = side == cola::ParticleClass::spectatorA ? spectIterB : endIter;
+
     uint sourceA = cola::pdgToAZ(side == cola::ParticleClass::spectatorA ? data.iniState.pdgCodeA : data.iniState.pdgCodeB).first;
     if(root.get() == nullptr)
     {
@@ -98,9 +113,9 @@ cola::EventParticles CoordinateMSTClustering::_process_side(const cola::EventDat
     }
     // boost to rest frame for each set of spectators
     cola::LorentzVector pNucleus = {0.0, 0.0, 0.0, 0.0};
-    for (auto particle = spectIterA; particle != spectIterB; particle++)
+    for (auto particle = bIter; particle != eIter; particle++)
         pNucleus += particle->momentum;
-    for (auto particle = spectIterA; particle != endIter; particle++)
+    for (auto particle = bIter; particle != eIter; particle++)
     {
         particle->momentum.boost(-pNucleus);
         count++;
@@ -131,12 +146,20 @@ cola::EventParticles CoordinateMSTClustering::_process_side(const cola::EventDat
                 momentum += nucleon->momentum;
             }
 
-            cola::Particle cluster;
-            cluster.position = position / topView->vertices.size();
-            cluster.momentum = momentum;
-            cluster.pdgCode = cola::AZToPdg(clusterAZ);
-            cluster.pClass = side;
-            clusters.push_back(cluster);
+            if ((clusterAZ.first == 0 and clusterAZ.second > 1) or (clusterAZ.first > 1 and clusterAZ.second == 0))
+            {
+                // there definitely are children since this is a multiproton or multineutron cluster
+                unprocessed.push(topView->children.value().first);
+                unprocessed.push(topView->children.value().second);
+            } else
+            {
+                cola::Particle cluster;
+                cluster.position = position / topView->vertices.size();
+                cluster.momentum = momentum;
+                cluster.pdgCode = cola::AZToPdg(clusterAZ);
+                cluster.pClass = side;
+                clusters.push_back(cluster);
+            }
         } else if (topView->children.has_value()) 
         {
             unprocessed.push(topView->children.value().first);

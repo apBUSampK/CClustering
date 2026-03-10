@@ -49,6 +49,12 @@ void MSTClustering::construct_trees(std::vector<Edge> &&edgeData)
 
     // set root nodes
 
-    rootA = treeA.begin()->second;
-    rootB = treeB.begin()->second;
+    if (treeA.empty())
+        rootA = nullptr;
+    else
+        rootA = treeA.begin()->second;
+    if (treeB.empty())
+        rootB = nullptr;
+    else
+        rootB = treeB.begin()->second;
 }
