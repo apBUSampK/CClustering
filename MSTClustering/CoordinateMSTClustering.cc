@@ -37,7 +37,7 @@ std::unique_ptr<cola::EventData> CoordinateMSTClustering::get_clusters(std::uniq
 
     // erase spectator nucleons
     data->particles.erase(spectIterA != endIter ? spectIterA : spectIterB, endIter);
-    
+
     // append clusters
     if (rootA != nullptr)
         data->particles.insert(data->particles.end(), clustersA.begin(), clustersA.end());
@@ -107,14 +107,12 @@ cola::EventParticles CoordinateMSTClustering::_process_side(const cola::EventDat
     auto eIter = side == cola::ParticleClass::spectatorA ? spectIterB : endIter;
 
     uint sourceA = cola::pdgToAZ(side == cola::ParticleClass::spectatorA ? data.iniState.pdgCodeA : data.iniState.pdgCodeB).first;
-    if(root.get() == nullptr)
-    {
-        return clusters;
-    }
     // boost to rest frame for each set of spectators
     cola::LorentzVector pNucleus = {0.0, 0.0, 0.0, 0.0};
     for (auto particle = bIter; particle != eIter; particle++)
+    {
         pNucleus += particle->momentum;
+    }
     for (auto particle = bIter; particle != eIter; particle++)
     {
         particle->momentum.boost(-pNucleus);
