@@ -21,24 +21,28 @@
 
 #include "CoordinateMSTClustering.hh"
 
+#include <COLA.hh>
+
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
 
 using namespace cola;
 
-std::unique_ptr<VFilter> CPreEquilibriumFactory::Create(const std::unordered_map<std::string, std::string>& paramMap) {
-  if (paramMap.at("clustering_type") == "GMST") {
-    if (auto it = paramMap.find("stat_exen_type"); it != paramMap.end()) {
-      excitationEnergyType = std::stoi(it->second);
+std::unique_ptr<VFilter> CPreEquilibriumFactory::Create(const std::unordered_map<std::string, std::string>& param_map) {
+  if (param_map.at("clustering_type") == "GMST") {
+    if (auto it = param_map.find("stat_exen_type"); it != param_map.end()) {
+      excitation_energy_type_ = std::stoi(it->second);
     }
-    if (auto it = paramMap.find("consider_coulomb"); it != paramMap.end()) {
-      repulsion = std::stoi(it->second);
+    if (auto it = param_map.find("consider_coulomb"); it != param_map.end()) {
+      repulsion_ = std::stoi(it->second);
     }
-    if (auto it = paramMap.find("simulate_momentum"); it != paramMap.end()) {
-      momentum = std::stoi(it->second);
+    if (auto it = param_map.find("simulate_momentum"); it != param_map.end()) {
+      momentum_ = std::stoi(it->second);
     }
-    return std::make_unique<CoordinateMSTClustering>(repulsion.value_or(false), momentum.value_or(true),
-                                                     excitationEnergyType.value_or(7));
-  } else {
-    throw std::runtime_error("Clustering type is unrecognized");
+    return std::make_unique<CoordinateMSTClustering>(repulsion_.value_or(false), momentum_.value_or(true),
+                                                     excitation_energy_type_.value_or(4));
   }
+  throw std::runtime_error("Clustering type is unrecognized");
 }

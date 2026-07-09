@@ -17,14 +17,9 @@
  * SOFTWARE.
  */
 
+#include <G4Types.hh>
 #ifndef ExcitationEnergy_h
 #define ExcitationEnergy_h 1
-
-#include "G4ExceptionHandler.hh"
-#include "Randomize.hh"
-#include "globals.hh"
-
-#include <libgen.h>
 
 #include <cmath>
 #include <fstream>
@@ -47,7 +42,7 @@ class ExcitationEnergy {
 
   G4double GetEnergyParabolicApproximation(G4int a) const;
 
-  G4double GetEnergyDampEricson(G4int a);
+  G4double GetEnergyDampEricson(G4int a) const;
 
   G4double GetEnergyHybridFit(G4int a) const;
 
@@ -86,7 +81,7 @@ class ExcitationEnergy {
   G4double alpha_switch_;
 
   G4int init_a_;
-  G4int ExEnLabel{3};
+  G4int ex_en_label_{3};
 
   G4double low_ex_en_;
   G4double up_ex_en_;

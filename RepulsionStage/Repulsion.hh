@@ -20,30 +20,30 @@
 #ifndef REPULSION_HH
 #define REPULSION_HH
 
-#include "COLA.hh"
-#include "G4ReactionProductVector.hh"
-#include "G4SystemOfUnits.hh"
+#include <CLHEP/Units/PhysicalConstants.h>
+#include <CLHEP/Units/SystemOfUnits.h>
+#include <EventData.hh>
+#include <LorentzVector.hh>
 
 #include <cmath>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <vector>
 
-namespace RepulsionStage {
+namespace repulsion_stage {
 
-  constexpr double fm = 1e-15 * CLHEP::m;
-  constexpr double theta = 0.3;
-  constexpr double totalTime = 200 * fm / CLHEP::c_light;
-  constexpr double iterations = 1000;
-  constexpr double max_adaptive_delta = std::numeric_limits<double>::max();
+  constexpr double kFm = 1e-15 * CLHEP::m;
+  constexpr double kTheta = 0.3;
+  constexpr double kTotalTime = 200 * kFm / CLHEP::c_light;
+  constexpr double kIterations = 1000;
+  constexpr double kMaxAdaptiveDelta = std::numeric_limits<double>::max();
 
   cola::EventParticles CalculateRepulsion(cola::EventParticles&& frags);
 
   class BHNode {
    public:
-    int Z;                                          // total charge
-    int nPart;                                      // number of particles in the node
+    int z;                                          // total charge
+    int n_part;                                     // number of particles in the node
     cola::Vector3<double> cr;                       // mean coordinates of the charges in box
     cola::Vector3<double> ctr;                      // coordinates of the box center
     std::vector<std::unique_ptr<BHNode>> children;  // child nodes
@@ -52,7 +52,7 @@ namespace RepulsionStage {
 
     BHNode() = default;
     BHNode(double size, const cola::Vector3<double>& ctr)
-        : size(size), ctr(ctr), Z(0), nPart(0), cr({0.0, 0.0, 0.0}), index(-1) {};
+        : size(size), ctr(ctr), z(0), n_part(0), cr({.x = 0.0, .y = 0.0, .z = 0.0}), index(-1) {};
     ~BHNode() = default;
     void Divide();
   };
@@ -72,17 +72,17 @@ namespace RepulsionStage {
 
     void BuildBHTree(const cola::EventParticles& frags);
 
-    std::unique_ptr<BHNode> InitializeRoot(const cola::EventParticles& frags);
+    static std::unique_ptr<BHNode> InitializeRoot(const cola::EventParticles& frags);
 
     void GetForces(const BHNode* node);
 
     cola::Vector3<double> Force(const BHNode* rootnode, const BHNode* node) const;
 
-    cola::Vector3<double> DuoForce(const cola::Vector3<double> vec, const double from_Z) const;
+    static cola::Vector3<double> DuoForce(cola::Vector3<double> vec, double from_z);
 
-    void InsertFragment(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex, int Z);
+    void InsertFragment(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int p_index, int z);
   };
 
-}  // namespace RepulsionStage
+}  // namespace repulsion_stage
 
 #endif

@@ -22,13 +22,16 @@
 
 #include "COLA.hh"
 
+#include <memory>
 #include <optional>
+#include <string>
+#include <unordered_map>
 
 namespace cola {
 
   class CPreEquilibriumFactory final : public VConverterFactory {
    public:
-    std::unique_ptr<VFilter> Create(const std::unordered_map<std::string, std::string>&) final;
+    std::unique_ptr<VFilter> Create(const std::unordered_map<std::string, std::string>& /*paramMap*/) final;
 
     const std::string& GetFilterName() const override {
       static const std::string name{"CPreEquilibrium"};
@@ -36,9 +39,9 @@ namespace cola {
     }
 
    private:
-    std::optional<bool> repulsion;
-    std::optional<bool> momentum;
-    std::optional<int> excitationEnergyType;
+    std::optional<bool> repulsion_;
+    std::optional<bool> momentum_;
+    std::optional<int> excitation_energy_type_;
   };
 
 }  // namespace cola

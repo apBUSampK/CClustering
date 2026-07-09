@@ -22,13 +22,13 @@
 
 #include "MSTClustering.hh"
 
-#include <G4ExcitationHandler.hh>
+#include <CLHEP/Units/SystemOfUnits.h>
+#include <EventData.hh>
 #include <G4FermiPhaseDecay.hh>
-#include <G4NucleiProperties.hh>
-#include <G4ReactionProductVector.hh>
 
-#include <algorithm>
+#include <cstdint>
 #include <memory>
+#include <vector>
 
 namespace cola {
 
@@ -36,19 +36,19 @@ namespace cola {
    public:
     CoordinateMSTClustering() = delete;
     CoordinateMSTClustering(bool consider_rep, bool extra_momentum, int stat_exen_type)
-        : _consider_rep(consider_rep), _extra_momentum(extra_momentum), _stat_exen_type(stat_exen_type) {};
+        : consider_rep_(consider_rep), extra_momentum_(extra_momentum), stat_exen_type_(stat_exen_type) {};
 
    private:
-    static constexpr double nucleonAverMass = 0.93891875434 * CLHEP::GeV;
-    bool _consider_rep;
-    bool _extra_momentum;
-    uint32_t _stat_exen_type;
+    static constexpr double kNucleonAverMass = 0.93891875434 * CLHEP::GeV;
+    bool consider_rep_;
+    bool extra_momentum_;
+    uint32_t stat_exen_type_;
 
-    std::vector<Edge> get_edges(const EventData&) final;
-    std::unique_ptr<EventData> get_clusters(std::unique_ptr<EventData>&&) final;
-    EventParticles _process_side(const EventData&, ParticleClass);
+    std::vector<Edge> GetEdges(const EventData& /*unused*/) final;
+    std::unique_ptr<EventData> GetClusters(std::unique_ptr<EventData>&& /*data*/) final;
+    EventParticles ProcessSide(const EventData& /*data*/, ParticleClass /*side*/);
 
-    G4FermiPhaseDecay phaseSpaceDecay;
+    G4FermiPhaseDecay phase_space_decay_;
   };
 
 }  // namespace cola
