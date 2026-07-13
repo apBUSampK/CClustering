@@ -83,7 +83,7 @@
 	    "targets": ["clang-tidy-check"]
         },
         {
-            "name": "tidy-fix",
+            "name": "clang-tidy-fix",
             "displayName": "Check and fix clang-tidy",
             "configurePreset": "default-test",
 	    "targets": ["clang-tidy-fix"]
@@ -223,6 +223,20 @@
                 {
                     "type": "build",
                     "name": "format-fix"
+                }
+            ]
+        },
+	{
+            "name": "release",
+            "displayName": "Release Workflow",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release"
+                },
+                {
+                    "type": "build",
+                    "name": "release"
                 }
             ]
         },

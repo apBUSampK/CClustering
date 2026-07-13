@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout CPreEquilibrium
         uses: actions/checkout@v6
+        with:
+          path: preeq
 
       - name: Checkout COLA
         uses: actions/checkout@v6
@@ -79,11 +81,14 @@ jobs:
           sudo cmake --install build/release
 
       - name: Build CPreEquilibrium
+        working-directory: preeq
         run: |
+          source "${G4_INSTALL}/bin/geant4.sh"
           export CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
           cmake --workflow release
 
       - name: Check formatting
+        working-directory: preeq
         id: check-format
         if: always()
         run: cmake --workflow format-check

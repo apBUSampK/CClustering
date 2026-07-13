@@ -21,11 +21,11 @@
 #define CCLUSTERING_MSTCLUSTERING_H
 
 #include <COLA.hh>
-#include <EventData.hh>
 
+#include <algorithm>
+#include <map>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
 namespace cola {
@@ -47,15 +47,15 @@ namespace cola {
       nPair vert;
       double size;
       ParticleClass p_class;
-      Edge(nPair vert, double size, ParticleClass p_class) : vert(std::move(vert)), size(size), p_class(p_class) {};
+      Edge(nPair vert_, double size_, ParticleClass p_class_) : vert(vert_), size(size_), p_class(p_class_) {};
     };
 
     // a single Node with children.
     struct Node {
-      explicit Node(Particle& vertex) : vertices({&vertex}) {}
+      explicit Node(Particle& vertex) : height(0.), vertices({&vertex}) {}
       Node() = default;
-      Node(Node* first, Node* second, double height)
-          : height(height), vertices(first->vertices), children(std::make_pair(first, second)) {
+      Node(Node* first, Node* second, double height_)
+          : height(height_), vertices(first->vertices), children(std::make_pair(first, second)) {
         vertices.insert(vertices.end(), second->vertices.begin(), second->vertices.end());  // append second vector
       }
 
@@ -66,22 +66,22 @@ namespace cola {
       std::optional<std::pair<Node*, Node*>> children;
     };
 
-    Node* root_a_;
-    Node* root_b_;
+    Node* rootA;
+    Node* rootB;
 
     // it is reasonable to use the iterators for quick access to spectators even at this abstract level, so this class
     // has it
-    EventParticles::iterator spect_iter_a_;
-    EventParticles::iterator spect_iter_b_;
-    EventParticles::iterator end_iter_;
+    EventParticles::iterator spectIterA;
+    EventParticles::iterator spectIterB;
+    EventParticles::iterator endIter;
 
    private:
-    void ConstructTrees(std::vector<Edge>&& edge_data, std::vector<Node>& nodes);
+    void construct_trees(std::vector<Edge>&& edgeData, std::vector<Node>& nodes);
 
     // get full graph data from EventData
-    virtual std::vector<Edge> GetEdges(const EventData&) = 0;
+    virtual std::vector<Edge> get_edges(const EventData&) = 0;
     // construct clusters
-    virtual std::unique_ptr<EventData> GetClusters(std::unique_ptr<EventData>&&) = 0;
+    virtual std::unique_ptr<EventData> get_clusters(std::unique_ptr<EventData>&&) = 0;
   };
 }  // namespace cola
 #endif  // CCLUSTERING_MSTCLUSTERING_H
