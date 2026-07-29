@@ -21,7 +21,6 @@
 #ifndef ExcitationEnergy_h
 #define ExcitationEnergy_h 1
 
-#include <cmath>
 #include <fstream>
 
 class ExcitationEnergy {
@@ -30,7 +29,7 @@ class ExcitationEnergy {
 
   ~ExcitationEnergy();
 
-  G4double GetEnergy(G4int a);
+  G4double GetEnergy(G4int a) const;
 
   G4double GetEnergyEricson(G4int a) const;
 

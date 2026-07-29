@@ -19,9 +19,19 @@
 
 #include "Repulsion.hh"
 
+#include <CLHEP/Units/PhysicalConstants.h>
+#include <EventData.hh>
+#include <LorentzVector.hh>
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <memory>
+#include <vector>
+
 using namespace cola;
 
-namespace RepulsionStage {
+namespace repulsion_stage {
 
   cola::EventParticles CalculateRepulsion(cola::EventParticles&& frags) {
     if (frags.empty()) {
@@ -29,9 +39,9 @@ namespace RepulsionStage {
     }
 
     double time = 0.0;
-    double delta_time = totalTime / static_cast<double>(iterations);
+    double delta_time = kTotalTime / static_cast<double>(kIterations);
 
-    while (time < totalTime) {
+    while (time < kTotalTime) {
       BHTree bhtree(frags);
 
       double temp_timedelta = std::min(delta_time, bhtree.GetAdaptiveTimeDelta());
@@ -55,30 +65,30 @@ namespace RepulsionStage {
   }
 
   std::unique_ptr<BHNode> BHTree::InitializeRoot(const cola::EventParticles& frags) {
-    cola::Vector3 minVector;
-    cola::Vector3 maxVector;
-    minVector.x = std::min_element(frags.begin(), frags.end(), [](const cola::Particle& l, const cola::Particle& r) {
-                    return l.position.x < r.position.x;
-                  })->position.x;
-    minVector.y = std::min_element(frags.begin(), frags.end(), [](const cola::Particle& l, const cola::Particle& r) {
-                    return l.position.y < r.position.y;
-                  })->position.y;
-    minVector.z = std::min_element(frags.begin(), frags.end(), [](const cola::Particle& l, const cola::Particle& r) {
-                    return l.position.z < r.position.z;
-                  })->position.z;
-    maxVector.x = std::max_element(frags.begin(), frags.end(), [](const cola::Particle& l, const cola::Particle& r) {
-                    return l.position.x < r.position.x;
-                  })->position.x;
-    maxVector.y = std::max_element(frags.begin(), frags.end(), [](const cola::Particle& l, const cola::Particle& r) {
-                    return l.position.y < r.position.y;
-                  })->position.y;
-    maxVector.z = std::max_element(frags.begin(), frags.end(), [](const cola::Particle& l, const cola::Particle& r) {
-                    return l.position.z < r.position.z;
-                  })->position.z;
+    cola::Vector3 min_vector;
+    cola::Vector3 max_vector;
+    min_vector.x = std::ranges::min_element(frags, [](const cola::Particle& left, const cola::Particle& right) {
+                     return left.position.x < right.position.x;
+                   })->position.x;
+    min_vector.y = std::ranges::min_element(frags, [](const cola::Particle& left, const cola::Particle& right) {
+                     return left.position.y < right.position.y;
+                   })->position.y;
+    min_vector.z = std::ranges::min_element(frags, [](const cola::Particle& left, const cola::Particle& right) {
+                     return left.position.z < right.position.z;
+                   })->position.z;
+    max_vector.x = std::ranges::max_element(frags, [](const cola::Particle& left, const cola::Particle& right) {
+                     return left.position.x < right.position.x;
+                   })->position.x;
+    max_vector.y = std::ranges::max_element(frags, [](const cola::Particle& left, const cola::Particle& right) {
+                     return left.position.y < right.position.y;
+                   })->position.y;
+    max_vector.z = std::ranges::max_element(frags, [](const cola::Particle& left, const cola::Particle& right) {
+                     return left.position.z < right.position.z;
+                   })->position.z;
 
-    auto range = maxVector - minVector;
-    double maxRange = std::max({range.x, range.y, range.z});
-    return std::make_unique<BHNode>(maxRange, (minVector + maxVector) / 2);
+    auto range = max_vector - min_vector;
+    double max_range = std::max({range.x, range.y, range.z});
+    return std::make_unique<BHNode>(max_range, (min_vector + max_vector) / 2);
   }
 
   void BHTree::BuildBHTree(const cola::EventParticles& frags) {
@@ -89,53 +99,71 @@ namespace RepulsionStage {
     }
   }
 
-  void BHTree::InsertFragment(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int pIndex,
-                              int Z) {
-    if (node->nPart == 0) {
-      node->Z += Z;
+  void BHTree::InsertFragment(const std::unique_ptr<BHNode>& node, const cola::Vector3<double>& cords, int p_index,
+                              int fragment_z) {
+    if (node->n_part == 0) {
+      node->total_z += fragment_z;
       node->cr = cords;
-      node->index = pIndex;
-      node->nPart++;
+      node->index = p_index;
+      node->n_part++;
       return;
     }
-    if (node->nPart == 1) {
+    if (node->n_part == 1) {
       node->Divide();
 
       int i = 0;
-      if (node->cr.x > node->ctr.x) i |= 1;
-      if (node->cr.y > node->ctr.y) i |= 2;
-      if (node->cr.z > node->ctr.z) i |= 4;
-      InsertFragment(node->children[i], node->cr, node->index, node->Z);
+      if (node->cr.x > node->ctr.x) {
+        i |= 1;
+      }
+      if (node->cr.y > node->ctr.y) {
+        i |= 2;
+      }
+      if (node->cr.z > node->ctr.z) {
+        i |= 4;
+      }
+      InsertFragment(node->children[i], node->cr, node->index, node->total_z);
 
       i = 0;
-      if (cords.x > node->ctr.x) i |= 1;
-      if (cords.y > node->ctr.y) i |= 2;
-      if (cords.z > node->ctr.z) i |= 4;
-      InsertFragment(node->children[i], cords, pIndex, Z);
+      if (cords.x > node->ctr.x) {
+        i |= 1;
+      }
+      if (cords.y > node->ctr.y) {
+        i |= 2;
+      }
+      if (cords.z > node->ctr.z) {
+        i |= 4;
+      }
+      InsertFragment(node->children[i], cords, p_index, fragment_z);
 
       node->cr = (node->cr + cords) / 2;
-      node->Z += Z;
+      node->total_z += fragment_z;
       node->index = -1;
-      node->nPart++;
+      node->n_part++;
       return;
     }
-    node->cr = (node->cr * node->Z + cords) / (node->Z + 1);
-    node->Z += Z;
-    node->nPart++;
+    node->cr = (node->cr * node->total_z + cords) / (node->total_z + fragment_z);
+    node->total_z += fragment_z;
+    node->n_part++;
 
     int i = 0;
-    if (cords.x > node->ctr.x) i |= 1;
-    if (cords.y > node->ctr.y) i |= 2;
-    if (cords.z > node->ctr.z) i |= 4;
-    InsertFragment(node->children[i], cords, pIndex, Z);
+    if (cords.x > node->ctr.x) {
+      i |= 1;
+    }
+    if (cords.y > node->ctr.y) {
+      i |= 2;
+    }
+    if (cords.z > node->ctr.z) {
+      i |= 4;
+    }
+    InsertFragment(node->children[i], cords, p_index, fragment_z);
   }
 
   double BHTree::GetAdaptiveTimeDelta() const {
-    double min_time = max_adaptive_delta;
+    double min_time = kMaxAdaptiveDelta;
     for (size_t i = 0; i < frags_.size(); i++) {
       auto mnt = frags_.at(i).momentum;
       double mval = std::sqrt(mnt.x * mnt.x + mnt.y * mnt.y + mnt.z * mnt.z);
-      if (!frags_.at(i).GetAZ().second || !fs_[i].Mag() || !mval) {
+      if ((frags_.at(i).GetAZ().second == 0u) || (fs_[i].Mag() == 0.0) || (mval == 0.0)) {
         continue;
       }
       min_time = std::min(min_time, 0.05 * mval / fs_[i].Mag());
@@ -150,29 +178,30 @@ namespace RepulsionStage {
       if (frags_.at(i).GetAZ().second == 0) {
         continue;
       }
-      cola::LorentzVector p = frags_.at(i).momentum;
+      cola::LorentzVector momentum = frags_.at(i).momentum;
       cola::Vector3<double> half_dp = fs_[i] * time_delta * 0.5;
 
       cola::Vector3<double> mid_v =
-          (p.SpatialPart() + half_dp) / std::sqrt((p.SpatialPart() + half_dp).Mag2() + p.Mag2());
-      r_delta[i] = cola::Vector3<double>{time_delta * mid_v.x, time_delta * mid_v.y, time_delta * mid_v.z};
+          (momentum.SpatialPart() + half_dp) / std::sqrt((momentum.SpatialPart() + half_dp).Mag2() + momentum.Mag2());
+      r_delta[i] =
+          cola::Vector3<double>{.x = time_delta * mid_v.x, .y = time_delta * mid_v.y, .z = time_delta * mid_v.z};
 
-      cola::Vector3<double> pvec = p.SpatialPart() + 2 * half_dp;
-      p.x = pvec.x;
-      p.y = pvec.y;
-      p.z = pvec.z;
-      p.e = std::sqrt((p.SpatialPart() + 2 * half_dp).Mag2() + p.Mag2());
+      cola::Vector3<double> pvec = momentum.SpatialPart() + 2 * half_dp;
+      momentum.x = pvec.x;
+      momentum.y = pvec.y;
+      momentum.z = pvec.z;
+      momentum.e = std::sqrt((momentum.SpatialPart() + 2 * half_dp).Mag2() + momentum.Mag2());
 
-      frags_.at(i).momentum = p;
+      frags_.at(i).momentum = momentum;
     }
     return r_delta;
   }
 
   void BHTree::GetForces(const BHNode* node) {
-    if (node->Z == 0) {
+    if (node->total_z == 0) {
       return;
     }
-    if (node->nPart == 1) {
+    if (node->n_part == 1) {
       fs_[node->index] += Force(rootnode_.get(), node);
       return;
     }
@@ -182,32 +211,33 @@ namespace RepulsionStage {
   }
 
   cola::Vector3<double> BHTree::Force(const BHNode* rootnode, const BHNode* node) const {
-    if ((rootnode->Z == 0) || ((rootnode->index != -1) && rootnode->index == node->index)) {
-      return {0.0, 0.0, 0.0};
+    if ((rootnode->total_z == 0) || ((rootnode->index != -1) && rootnode->index == node->index)) {
+      return {.x = 0.0, .y = 0.0, .z = 0.0};
     }
-    if (rootnode->nPart == 1) {
-      return DuoForce(node->cr - rootnode->cr, rootnode->Z);
+    if (rootnode->n_part == 1) {
+      return DuoForce(node->cr - rootnode->cr, rootnode->total_z);
     }
-    if ((rootnode->size / (node->cr - rootnode->cr).Mag()) < theta) {
-      return DuoForce(node->cr - rootnode->cr, rootnode->Z);
+    if ((rootnode->size / (node->cr - rootnode->cr).Mag()) < kTheta) {
+      return DuoForce(node->cr - rootnode->cr, rootnode->total_z);
     }
-    cola::Vector3<double> totalForce = {0.0, 0.0, 0.0};
+    cola::Vector3<double> total_force = {.x = 0.0, .y = 0.0, .z = 0.0};
     for (const auto& child : rootnode->children) {
-      totalForce += Force(child.get(), node);
+      total_force += Force(child.get(), node);
     }
-    return totalForce;
+    return total_force;
   }
 
-  cola::Vector3<double> BHTree::DuoForce(const cola::Vector3<double> vec, const double from_Z) const {
-    return vec * (CLHEP::elm_coupling * from_Z / std::pow(vec.Mag(), 3));
+  cola::Vector3<double> BHTree::DuoForce(const cola::Vector3<double> vec, const double from_z) {
+    return vec * (CLHEP::elm_coupling * from_z / std::pow(vec.Mag(), 3));
   }
 
   void BHNode::Divide() {
     children.resize(8);
     for (size_t i = 0; i < 8; i++) {
-      cola::Vector3<double> offset{(i & 1 ? 1 : -1) * size / 4.0, (i & 2 ? 1 : -1) * size / 4.0,
-                                   (i & 4 ? 1 : -1) * size / 4.0};
+      cola::Vector3<double> offset{.x = (((i & 1) != 0u) ? 1 : -1) * size / 4.0,
+                                   .y = (((i & 2) != 0u) ? 1 : -1) * size / 4.0,
+                                   .z = (((i & 4) != 0u) ? 1 : -1) * size / 4.0};
       children[i] = std::make_unique<BHNode>(size / 2.0, ctr + offset);
     }
   }
-}  // namespace RepulsionStage
+}  // namespace repulsion_stage

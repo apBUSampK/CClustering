@@ -20,56 +20,59 @@
 #include "MSTClustering.hh"
 
 #include "ExcitationEnergy.hh"
-#include "Repulsion.hh"
 
-#include <G4ExcitationHandler.hh>
-#include <G4NucleiProperties.hh>
+#include <EventData.hh>
 
-#include <limits>
-#include <stack>
+#include <algorithm>
+#include <iterator>
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 using namespace cola;
 
-void MSTClustering::construct_trees(std::vector<Edge>&& edgeData, std::vector<Node>& nodes) {
-  std::unordered_map<cola::Particle*, Node*> treeA;
-  std::unordered_map<cola::Particle*, Node*> treeB;
-  treeA.reserve(std::distance(spectIterA, spectIterB));
-  treeB.reserve(std::distance(spectIterB, endIter));
+void MSTClustering::ConstructTrees(std::vector<Edge>&& edge_data, std::vector<Node>& nodes) {
+  std::unordered_map<cola::Particle*, Node*> tree_a;
+  std::unordered_map<cola::Particle*, Node*> tree_b;
+  tree_a.reserve(std::distance(spect_iter_a_, spect_iter_b_));
+  tree_b.reserve(std::distance(spect_iter_b_, end_iter_));
 
   // no resizes are allowed (otherwise segfault)
-  nodes.reserve(2 * (treeA.bucket_count() + treeB.bucket_count()));
+  nodes.reserve(2 * (tree_a.bucket_count() + tree_b.bucket_count()));
 
   // initialize trees
-  for (auto iter = spectIterA; iter < spectIterB; ++iter) {
+  for (auto iter = spect_iter_a_; iter < spect_iter_b_; ++iter) {
     nodes.emplace_back(*iter);
-    treeA.emplace(&(*iter), &nodes.back());
+    tree_a.emplace(&(*iter), &nodes.back());
   }
-  for (auto iter = spectIterB; iter < endIter; ++iter) {
+  for (auto iter = spect_iter_b_; iter < end_iter_; ++iter) {
     nodes.emplace_back(*iter);
-    treeB.emplace(&(*iter), &nodes.back());
+    tree_b.emplace(&(*iter), &nodes.back());
   }
 
   // sort the edges for hierarchical tree
-  std::sort(edgeData.begin(), edgeData.end(), [](const Edge& l, const Edge& r) { return l.size < r.size; });
+  std::ranges::sort(edge_data, [](const Edge& left, const Edge& right) { return left.size < right.size; });
 
-  // merge nodes into complete trees using edgeData
-  for (const auto& edge : edgeData) {
-    auto v1 = edge.vert.first;
-    auto v2 = edge.vert.second;
+  // merge nodes into complete trees using edge_data
+  for (const auto& edge : edge_data) {
+    auto* v1 = edge.vert.first;
+    auto* v2 = edge.vert.second;
     switch (edge.p_class) {
       case cola::ParticleClass::kSpectatorA:
-        if (treeA[v1] != treeA[v2]) {
-          nodes.emplace_back(treeA[v1], treeA[v2], edge.size);
-          for (const auto vertex : nodes.back().vertices) {
-            treeA[vertex] = &nodes.back();
+        if (tree_a[v1] != tree_a[v2]) {
+          nodes.emplace_back(tree_a[v1], tree_a[v2], edge.size);
+          for (auto* const vertex : nodes.back().vertices) {
+            tree_a[vertex] = &nodes.back();
           }
         }
         break;
       case cola::ParticleClass::kSpectatorB:
-        if (treeB[v1] != treeB[v2]) {
-          nodes.emplace_back(treeB[v1], treeB[v2], edge.size);
-          for (const auto vertex : nodes.back().vertices) {
-            treeB[vertex] = &nodes.back();
+        if (tree_b[v1] != tree_b[v2]) {
+          nodes.emplace_back(tree_b[v1], tree_b[v2], edge.size);
+          for (auto* const vertex : nodes.back().vertices) {
+            tree_b[vertex] = &nodes.back();
           }
         }
         break;
@@ -80,22 +83,24 @@ void MSTClustering::construct_trees(std::vector<Edge>&& edgeData, std::vector<No
 
   // set root nodes
 
-  rootA = !treeA.empty() ? treeA.begin()->second : nullptr;
-  rootB = !treeB.empty() ? treeB.begin()->second : nullptr;
+  root_a_ = !tree_a.empty() ? tree_a.begin()->second : nullptr;
+  root_b_ = !tree_b.empty() ? tree_b.begin()->second : nullptr;
 }
 
 std::unique_ptr<cola::EventData> MSTClustering::operator()(std::unique_ptr<cola::EventData>&& data) {
   // sort particles by p_class (spectators are last)
   std::sort(data->particles.begin(), data->particles.end(),
-            [](const cola::Particle& l, const cola::Particle& r) { return l.p_class < r.p_class; });
-  spectIterA = std::find_if(data->particles.begin(), data->particles.end(),
-                            [](cola::Particle p) { return p.p_class == cola::ParticleClass::kSpectatorA; });
-  spectIterB = std::find_if(data->particles.begin(), data->particles.end(),
-                            [](cola::Particle p) { return p.p_class == cola::ParticleClass::kSpectatorB; });
-  endIter = data->particles.end();
+            [](const cola::Particle& left, const cola::Particle& right) { return left.p_class < right.p_class; });
+  spect_iter_a_ = std::find_if(data->particles.begin(), data->particles.end(), [](cola::Particle particle) {
+    return particle.p_class == cola::ParticleClass::kSpectatorA;
+  });
+  spect_iter_b_ = std::find_if(data->particles.begin(), data->particles.end(), [](cola::Particle particle) {
+    return particle.p_class == cola::ParticleClass::kSpectatorB;
+  });
+  end_iter_ = data->particles.end();
   // construct trees
   std::vector<Node> nodes;  // stores all nodes in trees (improves cpu cache hits)
-  construct_trees(get_edges(*data), nodes);
+  ConstructTrees(GetEdges(*data), nodes);
   // divide trees and process resulting pre-fragments
-  return get_clusters(std::move(data));
+  return GetClusters(std::move(data));
 }
