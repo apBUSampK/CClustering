@@ -27,6 +27,7 @@
 #include <G4ExceptionSeverity.hh>
 #include <G4Types.hh>
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -42,66 +43,64 @@ namespace exc_en_default_vals {
   constexpr double kPm = 0.2;
 }  // namespace exc_en_default_vals
 
-static G4double GaimardSchmidt(G4double E, G4double evaporation_energy, G4int a_final, G4int a_initial) {
-  G4double g0 = 16.;
-  G4double g1 = 0.7;
-  G4int RemovedNucleons = a_initial - a_final;
-  G4double res = 0.;
-  G4double testRes = 0.;
+namespace {
+  G4double GaimardSchmidt(G4double energy, G4double evaporation_energy, G4int a_final, G4int a_initial) {
+    G4double g0 = 16.;
+    G4double g1 = 0.7;
+    G4int removed_nucleons = a_initial - a_final;
+    G4double res = 0.;
 
-  if (E > 0.5 * evaporation_energy * RemovedNucleons) {  // Energy restriction for easier caclulations
+    if (energy > 0.5 * evaporation_energy * removed_nucleons) {  // Energy restriction for easier caclulations
+      return res;
+    }
+
+    // First term calculation at H-S formula
+    G4double term = g0;
+
+    for (G4int k = 2; k < removed_nucleons - 1; k++) {
+      term *= (g0 * energy) / static_cast<G4double>(k * (k - 1));
+    }
+
+    res = term;
+
+    // Rest sum calculating with recursive form of H-S formula
+    for (G4int i = 1; i < removed_nucleons; i++) {
+      term *= (g1 * energy / g0) * ((-1) * static_cast<G4double>(removed_nucleons - i + 1) /
+                                    (static_cast<G4double>(i) * static_cast<G4double>(removed_nucleons + i - 1)));
+      // G4cout<<testRes<<G4endl; //NaN is result of inf-inf becouse term becomes inf at some step.
+      res += term;
+    }
+
+    if (res != res) {
+      res = 0;
+    }  //- костыль!!!
+    res = std::max<G4double>(res, 0);
+
     return res;
   }
 
-  // First term calculation at H-S formula
-  G4double term = g0;
+  G4double Ericson(G4double energy, G4double evaporation_energy, G4int a_final, G4int a_initial) {
+    G4double g0 =
+        16;  // 16 was in Shidenberger - not influence calculations at all cause its freeze out in distr normalization.
+    G4int removed_nucleons = a_initial - a_final;
 
-  for (G4int k = 2; k < RemovedNucleons - 1; k++) {
-    term *= (g0 * E) / G4double(k * (k - 1));
+    if (energy > evaporation_energy * (a_initial - a_final)) {
+      G4double s_var = 0;
+      return s_var;
+    }
+
+    G4double s_var = g0;
+
+    for (G4int k = 2; k <= removed_nucleons; k++) {
+      s_var *= (g0 * energy) / static_cast<G4double>(k * (k - 1));
+    }
+
+    return s_var;
   }
-
-  res = term;
-
-  testRes = term;
-  // Rest sum calculating with recursive form of H-S formula
-  for (G4int m = 1; m < RemovedNucleons; m++) {
-    term *=
-        (g1 * E / g0) * ((-1) * G4double(RemovedNucleons - m + 1) / (G4double(m) * G4double(RemovedNucleons + m - 1)));
-    // G4cout<<testRes<<G4endl; //NaN is result of inf-inf becouse term becomes inf at some step.
-    res += term;
-  }
-
-  if (res != res) {
-    res = 0;
-  }  //- костыль!!!
-  if (res < 0) {
-    res = 0;
-  }
-
-  return res;
-}
-
-static G4double Ericson(G4double E, G4double evaporation_energy, G4int a_final, G4int a_initial) {
-  G4double g0 =
-      16;  // 16 was in Shidenberger - not influence calculations at all cause its freeze out in distr normalization.
-  G4int RemovedNucleons = a_initial - a_final;
-
-  if (E > evaporation_energy * (a_initial - a_final)) {
-    G4double s = 0;
-    return s;
-  }
-
-  G4double s = g0;
-
-  for (G4int k = 2; k <= RemovedNucleons; k++) {
-    s *= (g0 * E) / G4double(k * (k - 1));
-  }
-
-  return s;
-}
+}  // namespace
 
 ExcitationEnergy::ExcitationEnergy(G4int ex_en_label_in, G4int init_a_in) {
-  ExEnLabel = ex_en_label_in;
+  ex_en_label_ = ex_en_label_in;
   init_a_ = init_a_in;
   low_ex_en_ = 0 * init_a_;
   up_ex_en_ = 100 * init_a_;
@@ -162,7 +161,7 @@ void ExcitationEnergy::SetParametersCorrectedALADINFromFile() {
   std::vector<G4double> param_vect;
   G4double param = 0;
   G4int iter = 0;
-  while (1) {
+  while (true) {
     param_file_ >> param;
     param_vect.push_back(param);
     if (!param_file_.good()) {
@@ -199,7 +198,7 @@ void ExcitationEnergy::SetParametersHybridFit(G4double a0_in, G4double a1_in, G4
 }
 
 G4double ExcitationEnergy::GetEnergyALADIN(G4int a) const {
-  CLHEP::RandGauss randGauss(nullptr, 1);
+  CLHEP::RandGauss rand_gauss(nullptr, 1);
   G4double energy = 0;
   G4double alpha = static_cast<G4double>(a) / static_cast<G4double>(init_a_);
   G4double sigma_a = CLHEP::RandGauss::shoot() * sigma0_ * (1 + b0_ * (1 - alpha));
@@ -215,7 +214,7 @@ G4double ExcitationEnergy::GetEnergyALADIN(G4int a) const {
 }
 
 G4double ExcitationEnergy::GetEnergyCorrectedALADIN(G4int a) const {
-  CLHEP::RandGauss randGauss(nullptr, 1);
+  CLHEP::RandGauss rand_gauss(nullptr, 1);
   G4double energy = 0;
   G4double alpha = static_cast<G4double>(a) / static_cast<G4double>(init_a_);
   G4double sigma_e = CLHEP::RandGauss::shoot() * sigma0_ * (1 + b0_ * (1 - alpha) + b1_ * (1 - alpha) * (1 - alpha));
@@ -228,8 +227,7 @@ G4double ExcitationEnergy::GetEnergyCorrectedALADIN(G4int a) const {
 }
 
 G4double ExcitationEnergy::GetEnergyEricson(G4int a) const {
-  G4double excitation_energy_distribution[10000];
-  G4double Ericson(G4double /*E*/, G4double /*EvaporationEnergy*/, G4int /*a_final*/, G4int /*a_initial*/);
+  G4double excitation_energy_distribution[10000];  // NOLINT
 
   for (G4int n = 0; n < 10000; n++) {
     G4double sum = Ericson(static_cast<G4double>(n) * ((up_ex_en_ - low_ex_en_) / static_cast<G4double>(10000)),
@@ -245,8 +243,7 @@ G4double ExcitationEnergy::GetEnergyEricson(G4int a) const {
 }
 
 G4double ExcitationEnergy::GetEnergyGaimardSchmidt(G4int a) const {
-  G4double excitation_energy_distribution[10000];
-  G4double GaimardSchmidt(G4double /*E*/, G4double /*EvaporationEnergy*/, G4int /*a_final*/, G4int /*a_initial*/);
+  G4double excitation_energy_distribution[10000];  // NOLINT
 
   for (G4int n = 0; n < 10000; n++) {
     G4double sum = GaimardSchmidt(static_cast<G4double>(n) * ((up_ex_en_ - low_ex_en_) / static_cast<G4double>(10000)),
@@ -261,7 +258,7 @@ G4double ExcitationEnergy::GetEnergyGaimardSchmidt(G4int a) const {
   return energy;
 }
 G4double ExcitationEnergy::GetEnergyParabolicApproximation(G4int a) const {
-  CLHEP::RandGauss randGauss(nullptr, 1);
+  CLHEP::RandGauss rand_gauss(nullptr, 1);
   G4double energy;
   G4double alpha = static_cast<G4double>(a) / static_cast<G4double>(init_a_);
   G4double sigma_e =
@@ -270,7 +267,7 @@ G4double ExcitationEnergy::GetEnergyParabolicApproximation(G4int a) const {
   return energy;
 }
 
-G4double ExcitationEnergy::GetEnergyDampEricson(G4int a) {
+G4double ExcitationEnergy::GetEnergyDampEricson(G4int a) const {
   G4double energy = 0;
   if (init_a_ - a < alpha_switch_ * init_a_) {
     energy = GetEnergyEricson(a);
@@ -281,7 +278,7 @@ G4double ExcitationEnergy::GetEnergyDampEricson(G4int a) {
 }
 
 G4double ExcitationEnergy::GetEnergyHybridFit(G4int a) const {
-  CLHEP::RandGauss randGauss(nullptr, 1);
+  CLHEP::RandGauss rand_gauss(nullptr, 1);
   G4double alpha = static_cast<G4double>(a) / static_cast<G4double>(init_a_);
   G4double energy = -1;
   G4double sigma_e;
@@ -300,41 +297,41 @@ G4double ExcitationEnergy::GetEnergyHybridFit(G4int a) const {
   return energy;
 }
 
-G4double ExcitationEnergy::GetEnergy(G4int a) {
+G4double ExcitationEnergy::GetEnergy(G4int a) const {
   G4double energy;
-  switch (ExEnLabel) {
+  switch (ex_en_label_) {
     case 1: {
-      energy = GetEnergyEricson(a);
+      return GetEnergyEricson(a);
       break;
     }
     case 2: {
-      energy = GetEnergyGaimardSchmidt(a);
+      return GetEnergyGaimardSchmidt(a);
       break;
     }
     case 3: {
-      energy = GetEnergyALADIN(a);
+      return GetEnergyALADIN(a);
       break;
     }
     case 4: {
-      energy = GetEnergyDampEricson(a);
+      return GetEnergyDampEricson(a);
       break;
     }
     case 5: {
-      energy = GetEnergyParabolicApproximation(a);
+      return GetEnergyParabolicApproximation(a);
       break;
     }
     case 6: {
-      energy = GetEnergyCorrectedALADIN(a);
+      return GetEnergyCorrectedALADIN(a);
       break;
     }
     case 7: {
-      energy = GetEnergyHybridFit(a);
+      return GetEnergyHybridFit(a);
       break;
     }
     default: {
       G4Exception("Statistics label", "GRATE-1", FatalException, "Statistics label is invalid");
+      return .0;
       break;
     }
   }
-  return energy;
 }
