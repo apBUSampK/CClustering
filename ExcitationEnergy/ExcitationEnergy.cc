@@ -98,6 +98,7 @@ namespace {
     return s_var;
   }
 }  // namespace
+
 ExcitationEnergy::ExcitationEnergy(G4int ex_en_label_in, G4int init_a_in) {
   ex_en_label_ = ex_en_label_in;
   init_a_ = init_a_in;
@@ -227,7 +228,6 @@ G4double ExcitationEnergy::GetEnergyCorrectedALADIN(G4int a) const {
 
 G4double ExcitationEnergy::GetEnergyEricson(G4int a) const {
   G4double excitation_energy_distribution[10000];  // NOLINT
-  G4double Ericson(G4double /*E*/, G4double /*EvaporationEnergy*/, G4int /*a_final*/, G4int /*a_initial*/);
 
   for (G4int n = 0; n < 10000; n++) {
     G4double sum = Ericson(static_cast<G4double>(n) * ((up_ex_en_ - low_ex_en_) / static_cast<G4double>(10000)),
@@ -244,7 +244,6 @@ G4double ExcitationEnergy::GetEnergyEricson(G4int a) const {
 
 G4double ExcitationEnergy::GetEnergyGaimardSchmidt(G4int a) const {
   G4double excitation_energy_distribution[10000];  // NOLINT
-  G4double GaimardSchmidt(G4double /*E*/, G4double /*EvaporationEnergy*/, G4int /*a_final*/, G4int /*a_initial*/);
 
   for (G4int n = 0; n < 10000; n++) {
     G4double sum = GaimardSchmidt(static_cast<G4double>(n) * ((up_ex_en_ - low_ex_en_) / static_cast<G4double>(10000)),
